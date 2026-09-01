@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Equilife — Personal Financial Balance</title>
+<link rel="icon" type="image/png" href="assets/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<!-- ===================== AUTH GATE (login / register) ===================== -->
+<div id="authScreen" class="auth-screen">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <img src="assets/logo.png" alt="Equilife" class="auth-logo">
+      <div>
+        <div class="auth-brand-name">Equilife</div>
+        <div class="auth-brand-tagline" data-i18n="tagline">Pencatatan Keuangan Pribadi</div>
+      </div>
+    </div>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" data-auth-tab="login" data-i18n="auth_login_tab">Masuk</button>
+      <button class="auth-tab" data-auth-tab="register" data-i18n="auth_register_tab">Daftar</button>
+    </div>
+
+    <!-- LOGIN -->
+    <form id="loginForm" class="auth-form">
+      <div class="field">
+        <label data-i18n="auth_email">Email</label>
+        <input type="email" id="loginEmail" required autocomplete="username">
+      </div>
+      <div class="field">
+        <label data-i18n="auth_password">Kata Sandi</label>
+        <input type="password" id="loginPassword" required autocomplete="current-password">
+      </div>
+      <p class="auth-error hidden" id="loginError"></p>
+      <button type="submit" class="btn-primary" style="width:100%;" data-i18n="auth_login_btn">Masuk</button>
+    </form>
+
+    <!-- REGISTER -->
+    <form id="registerForm" class="auth-form hidden">
+      <div class="field">
+        <label data-i18n="auth_fullname">Nama Lengkap</label>
+        <input type="text" id="regFullName" required>
+      </div>
+      <div class="two-field-row">
+        <div class="field">
+          <label data-i18n="auth_birthdate">Tanggal Lahir</label>
+          <input type="date" id="regBirthDate" required>
+        </div>
+        <div class="field">
+          <label data-i18n="auth_birthplace">Kota Kelahiran</label>
+          <input type="text" id="regBirthPlace" required>
+        </div>
+      </div>
+      <div class="field">
+        <label data-i18n="auth_email">Email</label>
+        <input type="email" id="regEmail" required autocomplete="username">
+      </div>
+      <div class="field">
+        <label data-i18n="auth_password">Kata Sandi</label>
+        <input type="password" id="regPassword" required minlength="6" autocomplete="new-password">
+        <span class="field-hint" data-i18n="auth_password_hint">Minimal 6 karakter</span>
+      </div>
+      <p class="auth-error hidden" id="registerError"></p>
+      <button type="submit" class="btn-primary" style="width:100%;" data-i18n="auth_register_btn">Daftar</button>
+    </form>
+
+    <!-- EMAIL VERIFICATION -->
+    <form id="verifyForm" class="auth-form hidden">
+      <p class="muted small" id="verifyDesc"></p>
+      <div class="field">
+        <label data-i18n="auth_verify_code">Kode Verifikasi (6 digit)</label>
+        <input type="text" id="verifyCode" inputmode="numeric" maxlength="6" required>
+      </div>
+      <p class="auth-error hidden" id="verifyError"></p>
+      <div id="verifyDevCode" class="callout hidden"></div>
+      <button type="submit" class="btn-primary" style="width:100%;" data-i18n="auth_verify_btn">Verifikasi &amp; Masuk</button>
+      <button type="button" class="btn-link" id="resendCodeBtn" data-i18n="auth_resend">Kirim ulang kode</button>
+    </form>
+
+    <p class="auth-disclaimer" data-i18n="auth_disclaimer">
+      Situs ini statis (GitHub Pages) — akun dan data disimpan di localStorage browser ini,
+      bukan di server. Jangan gunakan kata sandi yang juga kamu pakai di layanan lain.
+    </p>
+  </div>
+</div>
+
+<div class="app hidden" id="appRoot">
+
+  <!-- MOBILE TOP BAR (visible <=900px) -->
+  <header class="mobile-topbar" id="mobileTopbar">
+    <button id="hamburgerBtn" class="hamburger-btn" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+    <img src="assets/logo.png" alt="Equilife" class="mobile-logo">
+    <span class="mobile-brand-name">Equilife</span>
+  </header>
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <img src="assets/logo.png" alt="Equilife" class="brand-logo">
+      <div class="brand-text">
+        <span class="brand-name">Equilife</span>
+        <span class="brand-tagline" data-i18n="tagline">Pencatatan Keuangan Pribadi</span>
+      </div>
+      <button id="sidebarToggle" class="sidebar-toggle" title="Tutup/Buka sidebar">‹</button>
+    </div>
+
+    <div class="nav-section-label nav-label" data-i18n="nav_section_menu">MENU</div>
+    <nav class="nav" id="mainNav">
+      <button class="nav-item" data-view="overview" title="Overview">
+        <span class="nav-mono">O</span><span class="nav-label" data-i18n="nav_overview">Overview</span>
+      </button>
+      <button class="nav-item" data-view="transaksi" title="Transaksi">
+        <span class="nav-mono">T</span><span class="nav-label" data-i18n="nav_transaksi">Transaksi</span>
+      </button>
+      <button class="nav-item" data-view="anggaran" title="Anggaran">
+        <span class="nav-mono">A</span><span class="nav-label" data-i18n="nav_anggaran">Anggaran</span>
+      </button>
+      <button class="nav-item" data-view="analisis" title="Analisis">
+        <span class="nav-mono">S</span><span class="nav-label" data-i18n="nav_analisis">Analisis</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-user-card" id="sidebarUserCard">
+      <div class="user-chip" id="userChip" title="Pengguna">?</div>
+      <div class="user-card-text nav-label">
+        <span class="user-card-name" id="userCardName">—</span>
+        <button class="user-card-logout" id="logoutBtn" data-i18n="logout">Keluar</button>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <button id="exportExcelBtn" class="btn-link nav-label" data-i18n="export_excel" title="Export ke Excel">⬇ Export Excel</button>
+      <button id="exportJsonBtn" class="btn-link nav-label" data-i18n="export_json" title="Export ke JSON (untuk sinkronisasi MySQL)">⬇ Export JSON</button>
+      <button id="langToggle" class="lang-toggle nav-label" title="Ganti bahasa">ID / EN</button>
+    </div>
+    <button id="resetDataBtn" class="btn-link nav-label reset-link" data-i18n="reset_data">Reset data contoh</button>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="content">
+
+    <header class="topbar">
+      <div>
+        <h1 id="pageTitle">Overview</h1>
+        <p id="pageSubtitle" class="muted"></p>
+      </div>
+    </header>
+
+    <!-- ===================== OVERVIEW ===================== -->
+    <section id="view-overview" class="view">
+
+      <div class="section-row">
+        <div class="eyebrow" data-i18n="total_balance">TOTAL SALDO</div>
+        <button id="toggleBalance" class="btn-ghost small">Sembunyikan</button>
+      </div>
+      <div class="balance-figure" id="totalBalanceFigure">Rp 0</div>
+
+      <div class="cards-grid" id="accountsGrid"></div>
+      <p class="muted small" id="investSummaryLine"></p>
+
+      <div class="section-row" style="margin-top:6px;">
+        <button id="addAccountBtn" class="btn-link" data-i18n="add_account">+ Tambah rekening baru</button>
+      </div>
+      <form id="addAccountForm" class="inline-form hidden">
+        <div class="field">
+          <label data-i18n="acc_name">Nama Rekening / Dompet Baru</label>
+          <input type="text" id="newAccName" required>
+        </div>
+        <div class="field">
+          <label data-i18n="initial_bal">Saldo Awal (Rp)</label>
+          <input type="text" inputmode="numeric" id="newAccBalance" value="0">
+        </div>
+        <div class="field-actions">
+          <button type="submit" class="btn-primary small" data-i18n="save">Simpan</button>
+          <button type="button" class="btn-ghost small" id="cancelAddAccount" data-i18n="cancel">Batal</button>
+        </div>
+      </form>
+
+      <div class="section-row" style="margin-top:20px;">
+        <div class="eyebrow" data-i18n="cashflow_title">ARUS KAS</div>
+        <div class="filter-inline">
+          <select id="ovMonth"></select>
+          <select id="ovYear"></select>
+        </div>
+      </div>
+      <div class="summary-grid">
+        <div class="summary-card">
+          <div class="eyebrow"><span data-i18n="income_month">PEMASUKAN</span></div>
+          <div class="summary-value positive" id="sumIncome">Rp 0</div>
+        </div>
+        <div class="summary-card">
+          <div class="eyebrow"><span data-i18n="expense_month">PENGELUARAN</span></div>
+          <div class="summary-value negative" id="sumExpense">Rp 0</div>
+        </div>
+        <div class="summary-card">
+          <div class="eyebrow"><span data-i18n="surplus_month">SISA / SURPLUS</span></div>
+          <div class="summary-value" id="sumSurplus">Rp 0</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h3 data-i18n="liability_title">Liability (Utang)</h3>
+            <p class="muted small" data-i18n="liability_desc">Ringkasan pinjaman dan bunga berjalan</p>
+          </div>
+          <div class="filter-inline">
+            <select id="liabSource"></select>
+            <select id="liabMonth"></select>
+            <select id="liabYear"></select>
+          </div>
+        </div>
+        <div class="summary-grid two" id="liabSummaryGrid"></div>
+        <div id="liabList" class="tx-list"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <h3 data-i18n="recent_tx">Transaksi Terakhir</h3>
+          <button class="btn-link" data-i18n="see_all" data-goto="transaksi">Lihat semua →</button>
+        </div>
+        <div id="recentTxList" class="tx-list"></div>
+      </div>
+
+    </section>
+
+    <!-- ===================== TRANSAKSI ===================== -->
+    <section id="view-transaksi" class="view">
+
+      <div class="pill-group" id="txSectionGroup">
+        <button class="pill active" data-section="tx" data-i18n="sec_tx">Transaksi</button>
+        <button class="pill" data-section="debt" data-i18n="sec_debt">Utang &amp; Cicilan</button>
+        <button class="pill" data-section="invest" data-i18n="sec_invest">Investasi</button>
+        <button class="pill" data-section="category" data-i18n="sec_category">Kelola Kategori</button>
+      </div>
+
+      <!-- ---- sub: transaksi keuangan ---- -->
+      <div id="txSection-tx" class="tx-section active">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3 data-i18n="add_tx_title">Tambah Transaksi</h3>
+              <p class="muted small" data-i18n="add_tx_desc">Catat pemasukan, pengeluaran, atau transfer</p>
+            </div>
+          </div>
+
+          <div class="pill-group" id="txTypeGroup">
+            <button class="pill active" data-type="Pengeluaran" data-i18n="expense">Pengeluaran</button>
+            <button class="pill" data-type="Pemasukan" data-i18n="income">Pemasukan</button>
+            <button class="pill" data-type="Transfer" data-i18n="transfer">Transfer</button>
+          </div>
+
+          <form id="txForm" class="grid-form">
+            <div class="field">
+              <label data-i18n="date">Tanggal</label>
+              <input type="date" id="txDate" required>
+            </div>
+            <div class="field" id="fieldAccFrom">
+              <label id="labelAccFrom" data-i18n="acc_from">Sumber Rekening</label>
+              <select id="txAccFrom"></select>
+            </div>
+            <div class="field hidden" id="fieldAccTo">
+              <label id="labelAccTo" data-i18n="acc_to">Rekening Tujuan</label>
+              <select id="txAccTo"></select>
+            </div>
+            <div class="field hidden" id="fieldIncomeSource">
+              <label data-i18n="income_source">Sumber Pemasukan</label>
+              <select id="txIncomeSource">
+                <option value="Gaji Bulanan" data-i18n="income_src_salary">Gaji Bulanan</option>
+                <option value="Side Income" data-i18n="income_src_side">Side Income</option>
+                <option value="Penghasilan Lainnya" data-i18n="income_src_other">Penghasilan Lainnya</option>
+              </select>
+            </div>
+            <div class="field" id="fieldCategory">
+              <label data-i18n="category">Kategori Pos Pengeluaran</label>
+              <select id="txCategory"></select>
+            </div>
+            <div class="field">
+              <label data-i18n="amount">Nominal Transaksi (Rp)</label>
+              <input type="text" inputmode="numeric" id="txAmount" value="50.000" required>
+              <span class="field-hint" id="txAmountHint">Rp 50.000</span>
+            </div>
+            <div class="field field-wide">
+              <label data-i18n="notes">Keterangan</label>
+              <input type="text" id="txNotes" placeholder="Catatan singkat...">
+            </div>
+            <div class="field-actions field-wide">
+              <button type="submit" class="btn-primary" data-i18n="save">Simpan Transaksi</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3 data-i18n="tx_history">Riwayat Transaksi</h3>
+              <p class="muted small" id="txCount"></p>
+            </div>
+          </div>
+          <div id="fullTxList" class="tx-list"></div>
+        </div>
+      </div>
+
+      <!-- ---- sub: utang & cicilan ---- -->
+      <div id="txSection-debt" class="tx-section">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3 data-i18n="debt_form_title">Tambah Utang / Pinjaman</h3>
+              <p class="muted small" data-i18n="debt_form_desc">Kewajiban, admin, dan bunga terhitung otomatis</p>
+            </div>
+          </div>
+          <form id="debtForm" class="grid-form">
+            <div class="field">
+              <label data-i18n="debt_source">Utang Dimana</label>
+              <select id="debtSource">
+                <option>Bank</option>
+                <option>SPinjam</option>
+                <option>Paylater</option>
+                <option data-i18n="other">Lainnya</option>
+              </select>
+            </div>
+            <div class="field">
+              <label data-i18n="debt_start">Tanggal Mulai</label>
+              <input type="date" id="debtStartDate" required>
+            </div>
+            <div class="field">
+              <label data-i18n="debt_kewajiban">Kewajiban (Pokok Pinjaman Awal)</label>
+              <input type="text" inputmode="numeric" id="debtKewajiban" value="0">
+            </div>
+            <div class="field">
+              <label data-i18n="debt_admin">Admin (Biaya Admin)</label>
+              <input type="text" inputmode="numeric" id="debtAdmin" value="0">
+            </div>
+            <div class="field">
+              <label data-i18n="debt_diterima">Utang yang Diterima</label>
+              <span class="locked-value" id="debtDiterima">Rp 0</span>
+            </div>
+            <div class="field">
+              <label data-i18n="debt_jangka">Jangka Waktu (Bulan)</label>
+              <input type="number" min="1" step="1" id="debtJangka" value="12">
+            </div>
+            <div class="field">
+              <label data-i18n="debt_tagihan">Tagihan per Bulan</label>
+              <input type="text" inputmode="numeric" id="debtTagihan" value="0">
+            </div>
+            <div class="field">
+              <label data-i18n="debt_bunga_nominal">Total Nominal Bunga (otomatis)</label>
+              <span class="locked-value" id="debtBungaNominal">Rp 0</span>
+            </div>
+            <div class="field">
+              <label data-i18n="debt_bunga_persen">Persentase Bunga Total (otomatis)</label>
+              <span class="locked-value" id="debtBungaPersen">0.00%</span>
+            </div>
+            <div class="field field-wide">
+              <label data-i18n="notes">Keterangan</label>
+              <input type="text" id="debtNotes" placeholder="mis. Cicilan laptop, KTA renovasi...">
+            </div>
+            <div class="field-actions field-wide">
+              <button type="submit" class="btn-primary" data-i18n="debt_save">Simpan Utang</button>
+            </div>
+          </form>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3 data-i18n="debt_list_title">Daftar Utang</h3>
+              <p class="muted small" id="debtCount"></p>
+            </div>
+          </div>
+          <div id="debtList" class="tx-list"></div>
+        </div>
+      </div>
+
+      <!-- ---- sub: investasi ---- -->
+      <div id="txSection-invest" class="tx-section">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3 data-i18n="invest_form_title">Investasi</h3>
+              <p class="muted small" data-i18n="invest_form_desc">Catat pembelian dan penjualan aset investasi</p>
+            </div>
+          </div>
+
+          <div class="pill-group" id="investTypeGroup">
+            <button class="pill active" data-invtype="beli" data-i18n="invest_buy">Beli</button>
+            <button class="pill" data-invtype="jual" data-i18n="invest_sell">Jual</button>
+          </div>
+
+          <form id="investForm" class="grid-form">
+            <div class="field" id="fieldInvJenis">
+              <label data-i18n="invest_jenis">Jenis Investasi</label>
+              <select id="invJenis">
+                <option data-i18n="invest_saham">Saham</option>
+                <option data-i18n="invest_crypto">Crypto</option>
+                <option data-i18n="invest_obligasi">Obligasi</option>
+                <option data-i18n="invest_emas">Emas</option>
+                <option data-i18n="invest_reksadana">Reksa Dana</option>
+                <option data-i18n="other">Lainnya</option>
+              </select>
+            </div>
+            <div class="field" id="fieldInvKode">
+              <label data-i18n="invest_kode">Kode / Nama Investasi</label>
+              <input type="text" id="invKode" placeholder="mis. BBCA, BTC, Antam, SR012...">
+            </div>
+            <div class="field hidden" id="fieldInvLot">
+              <label data-i18n="invest_pilih_lot">Pilih Posisi Aktif</label>
+              <select id="invLotSelect"></select>
+            </div>
+            <div class="field" id="fieldInvNominal">
+              <label data-i18n="invest_nominal">Nominal Investasi (Rp)</label>
+              <input type="text" inputmode="numeric" id="invNominal" value="0">
+            </div>
+            <div class="field hidden" id="fieldInvTerima">
+              <label data-i18n="invest_terima">Nominal Diterima (Rp)</label>
+              <input type="text" inputmode="numeric" id="invNominalTerima" value="0">
+            </div>
+            <div class="field">
+              <label data-i18n="date">Tanggal</label>
+              <input type="date" id="invDate" required>
+            </div>
+            <div class="field field-wide">
+              <label data-i18n="notes">Keterangan</label>
+              <input type="text" id="invNotes">
+            </div>
+            <div class="field-actions field-wide">
+              <button type="submit" class="btn-primary" id="investSubmitBtn" data-i18n="save">Simpan</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <h3 data-i18n="invest_list_title">Posisi Investasi</h3>
+          </div>
+          <div id="investList" class="tx-list"></div>
+        </div>
+      </div>
+
+      <!-- ---- sub: kelola kategori ---- -->
+      <div id="txSection-category" class="tx-section">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3 data-i18n="cat_title">Kelola Kategori / Akun</h3>
+              <p class="muted small" data-i18n="cat_desc">Ketik nama akun — sistem menyarankan jenis dan kode otomatis (Harta/Utang/Modal/Pendapatan/Beban). Kategori berjenis Beban langsung tersedia di menu Anggaran.</p>
+            </div>
+          </div>
+          <form id="catForm" class="grid-form">
+            <div class="field field-wide">
+              <label data-i18n="cat_name">Nama Akun / Kategori</label>
+              <input type="text" id="catName" placeholder="mis. Cicilan Motor, Tabungan Emas, Bonus Tahunan...">
+            </div>
+            <div class="field">
+              <label data-i18n="cat_jenis">Jenis (saran otomatis)</label>
+              <select id="catJenis">
+                <option value="Harta" data-i18n="jenis_harta">Harta</option>
+                <option value="Utang" data-i18n="jenis_utang">Utang</option>
+                <option value="Modal" data-i18n="jenis_modal">Modal</option>
+                <option value="Pendapatan" data-i18n="jenis_pendapatan">Pendapatan</option>
+                <option value="Beban" data-i18n="jenis_beban" selected>Beban</option>
+              </select>
+            </div>
+            <div class="field">
+              <label data-i18n="cat_code">Kode (saran otomatis)</label>
+              <input type="text" id="catCode">
+            </div>
+            <div class="field" id="catKonsumtifWrap">
+              <label data-i18n="cat_konsumtif_type">Tipe (khusus Beban)</label>
+              <select id="catKonsumtif">
+                <option value="Non-Konsumtif" data-i18n="nonkonsumtif">Non-Konsumtif</option>
+                <option value="Konsumtif" data-i18n="konsumtif">Konsumtif</option>
+              </select>
+            </div>
+            <div class="field-actions field-wide">
+              <button type="submit" class="btn-primary" id="catSubmitBtn" data-i18n="cat_add">Tambah Kategori</button>
+              <button type="button" class="btn-ghost hidden" id="catCancelEdit" data-i18n="cancel">Batal</button>
+            </div>
+          </form>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <h3 data-i18n="cat_list_title">Daftar Kategori / Akun</h3>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table" id="catTable">
+              <thead>
+                <tr>
+                  <th data-i18n="code">Kode</th>
+                  <th data-i18n="cat_name">Nama</th>
+                  <th data-i18n="cat_jenis">Jenis</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="catTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ===================== ANGGARAN ===================== -->
+    <section id="view-anggaran" class="view">
+
+      <div class="panel">
+        <div class="panel-header" id="budgetSettingToggle" role="button">
+          <div>
+            <h3 data-i18n="setting_title">Target Anggaran &amp; Perhitungan Otomatis</h3>
+            <p class="muted small" data-i18n="setting_desc">Ubah nominal (Rp) atau persentase (%) — kolom satunya akan terhitung otomatis.</p>
+          </div>
+          <button class="btn-ghost small" id="budgetSettingChevron">＋</button>
+        </div>
+
+        <div id="budgetSettingBody" class="hidden">
+          <div class="callout" id="incomeInfo"></div>
+
+          <div class="budget-grid budget-grid-head">
+            <span data-i18n="code">Kode</span>
+            <span data-i18n="category">Kategori Pos</span>
+            <span data-i18n="target_rp">Target (Rp)</span>
+            <span data-i18n="target_pct">Target (%)</span>
+          </div>
+          <div id="budgetSettingRows"></div>
+
+          <div class="budget-grid budget-grid-total">
+            <span></span>
+            <span data-i18n="total_all">TOTAL KESELURUHAN</span>
+            <span id="budgetTotalRp">Rp 0</span>
+            <span id="budgetTotalPct">0.00%</span>
+          </div>
+          <div class="callout" id="budgetTotalStatus"></div>
+
+          <div class="field-actions">
+            <button class="btn-primary" id="saveBudgetBtn" data-i18n="save_setting">Simpan Perubahan Target</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <h3 data-i18n="budget_vs_act">Monitoring Anggaran</h3>
+          <p class="muted small" data-i18n="budget_vs_act_desc">Budget vs Realisasi bulan ini</p>
+        </div>
+        <div class="callout" id="salaryBasisInfo"></div>
+        <div class="table-wrap">
+          <table class="data-table" id="budgetTable">
+            <thead>
+              <tr>
+                <th data-i18n="category_col">Kategori</th>
+                <th data-i18n="type_col">Tipe</th>
+                <th data-i18n="target">Target</th>
+                <th data-i18n="actual">Realisasi</th>
+                <th data-i18n="remaining">Sisa</th>
+                <th data-i18n="status">Status</th>
+              </tr>
+            </thead>
+            <tbody id="budgetTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <h3 data-i18n="chart_title">Visualisasi Budget vs Realisasi</h3>
+        </div>
+        <div id="budgetChart" class="budget-chart"></div>
+        <div class="legend-row">
+          <span class="legend-item"><i class="dot dot-target"></i><span data-i18n="target">Target</span></span>
+          <span class="legend-item"><i class="dot dot-actual"></i><span data-i18n="actual">Realisasi</span></span>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ===================== ANALISIS ===================== -->
+    <section id="view-analisis" class="view">
+
+      <div class="section-row">
+        <div class="pill-group" id="periodGroup">
+          <button class="pill active" data-period="monthly" data-i18n="monthly">Bulanan</button>
+          <button class="pill" data-period="weekly" data-i18n="weekly">Mingguan</button>
+        </div>
+        <select id="weekSelect" class="hidden"></select>
+      </div>
+
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-header">
+            <h3 data-i18n="donut_title">Konsumtif vs Non-Konsumtif</h3>
+          </div>
+          <div class="donut-wrap">
+            <div class="donut" id="donutChart"></div>
+            <div class="donut-legend" id="donutLegend"></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <h3 data-i18n="lifestyle_ratio">Indikator Tingkat Konsumtif</h3>
+          </div>
+          <div class="lifestyle-figure" id="lifestylePct">0.0%</div>
+          <p class="muted small" data-i18n="from_income">dari pemasukan</p>
+          <div class="progress-track">
+            <div class="progress-fill" id="lifestyleBar"></div>
+          </div>
+          <div class="status-pill" id="lifestyleStatus"></div>
+          <div class="kv-list" id="lifestyleBreakdown"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <h3 data-i18n="category_detail">Rincian per Kategori</h3>
+        </div>
+        <div id="categoryBreakdown" class="rank-list"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h3 data-i18n="extra_indicators_title">Indikator Kesehatan Keuangan</h3>
+            <p class="muted small" data-i18n="extra_indicators_desc">Kemampuan bayar utang dan alokasi investasi (acuan umum, bukan saran keuangan personal)</p>
+          </div>
+        </div>
+        <div class="indicator-grid" id="extraIndicators"></div>
+      </div>
+
+    </section>
+
+  </main>
+</div>
+
+<!-- EDIT TRANSACTION MODAL -->
+<div id="editModal" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 data-i18n="correct_title">Koreksi Transaksi</h3>
+      <button class="btn-ghost small" id="closeEditModal">✕</button>
+    </div>
+    <form id="editTxForm">
+      <div class="field">
+        <label data-i18n="date">Tanggal</label>
+        <input type="date" id="editTxDate" required>
+      </div>
+      <div class="field">
+        <label data-i18n="amount">Nominal Transaksi (Rp)</label>
+        <input type="text" inputmode="numeric" id="editTxAmount" required>
+      </div>
+      <div class="field">
+        <label data-i18n="notes">Keterangan</label>
+        <input type="text" id="editTxNotes">
+      </div>
+      <div class="field-actions">
+        <button type="submit" class="btn-primary" data-i18n="save_changes">Simpan Perubahan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
