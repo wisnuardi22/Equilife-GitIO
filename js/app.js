@@ -1773,7 +1773,7 @@ const SESSION_KEY = "equilife_session_v1";
 /* Fill these in with your own EmailJS account (emailjs.com, free tier)
    to send a real verification email. Leave empty to fall back to an
    on-screen "preview" of the code — the app still works fully either way. */
-const EMAILJS_CONFIG = { publicKey: "", serviceId: "", templateId: "" };
+const EMAILJS_CONFIG = { publicKey: "XRWAefbK01Qo5SWQf", serviceId: "service_6qpy6jj", templateId: "template_fs9awro" };
 
 let currentUser = null; /* { id, email, fullName, birthDate, birthPlace, passwordHash, verified, verifyCode, verifyCodeExpires, createdAt } */
 let pendingVerifyUserId = null;
