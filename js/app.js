@@ -1647,6 +1647,8 @@ function init() {
     });
   });
   document.getElementById("weekSelect").addEventListener("change", (e) => { selectedWeek = Number(e.target.value); renderAnalisis(); });
+  document.getElementById("anMonth").addEventListener("change", renderAnalisis);
+  document.getElementById("anYear").addEventListener("change", renderAnalisis);
 
   ["debtKewajiban", "debtAdmin", "debtJangka", "debtTagihan"].forEach(id => {
     document.getElementById(id).addEventListener("input", recalcDebtFormPreview);
