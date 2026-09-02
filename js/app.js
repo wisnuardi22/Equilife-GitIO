@@ -1271,25 +1271,52 @@ function renderAnggaran() {
 /* ANALISIS                                                               */
 /* ---------------------------------------------------------------------- */
 let period = "monthly";
-let selectedWeek = null;
+let selectedWeek = null; /* 1-4, week-of-month bucket, only used when period === "weekly" */
+
+/* Splits a month into 4 fixed buckets: 1-7, 8-14, 15-21, 22-end. Simple and
+   predictable, avoids a ragged 5th week at month boundaries. */
+function weekOfMonthBucket(iso) {
+  const day = parseISO(iso).getDate();
+  if (day <= 7) return 1;
+  if (day <= 14) return 2;
+  if (day <= 21) return 3;
+  return 4;
+}
 
 function renderAnalisis() {
   const dict = tr();
 
-  const weeks = [...new Set(state.transactions.map(t => isoWeek(t.date)))].sort((a, b) => a - b);
+  const anMonthSel = document.getElementById("anMonth");
+  const anYearSel = document.getElementById("anYear");
+  if (!anMonthSel.dataset.bound) {
+    populateMonthYearSelect(anMonthSel, anYearSel);
+    anMonthSel.dataset.bound = "1";
+  }
+  const anMonth = Number(anMonthSel.value) || (new Date().getMonth() + 1);
+  const anYear = Number(anYearSel.value) || new Date().getFullYear();
+
   const weekSelect = document.getElementById("weekSelect");
   if (period === "weekly") {
     weekSelect.classList.remove("hidden");
-    weekSelect.innerHTML = weeks.map(w => `<option value="${w}">${dict.week_label}${w}</option>`).join("");
-    if (selectedWeek === null || !weeks.includes(selectedWeek)) selectedWeek = weeks[weeks.length - 1] || null;
-    if (selectedWeek !== null) weekSelect.value = selectedWeek;
+    if (!weekSelect.dataset.bound) {
+      weekSelect.innerHTML = [1, 2, 3, 4].map(w => `<option value="${w}">${dict.week_label}${w}</option>`).join("");
+      weekSelect.dataset.bound = "1";
+    }
+    if (selectedWeek === null) selectedWeek = 1;
+    weekSelect.value = selectedWeek;
   } else {
     weekSelect.classList.add("hidden");
   }
 
-  let dashTx = state.transactions.filter(t => t.type === "Pengeluaran");
+  /* Both Bulanan and Mingguan are scoped to the chosen month/year; Mingguan
+     additionally narrows down to one week-of-month bucket within it. */
+  let dashTx = state.transactions.filter(t => {
+    if (t.type !== "Pengeluaran") return false;
+    const d = parseISO(t.date);
+    return d.getFullYear() === anYear && d.getMonth() + 1 === anMonth;
+  });
   if (period === "weekly" && selectedWeek !== null) {
-    dashTx = dashTx.filter(t => isoWeek(t.date) === selectedWeek);
+    dashTx = dashTx.filter(t => weekOfMonthBucket(t.date) === selectedWeek);
   }
 
   const spentByCategory = {};
@@ -1297,9 +1324,18 @@ function renderAnalisis() {
 
   const konsumtifAmt = state.budget.filter(b => b.type === "Konsumtif").reduce((s, b) => s + (spentByCategory[b.code] || 0), 0);
   const nonKonsumtifAmt = state.budget.filter(b => b.type === "Non-Konsumtif").reduce((s, b) => s + (spentByCategory[b.code] || 0), 0);
-  const totalIncome = totalIncomeAllTime();
+
+  /* Income for the ratio/breakdown is scoped to the selected month too, so
+     the percentage reflects the period being viewed. The DSR indicator
+     further down still uses all-time income (see renderExtraIndicators),
+     since debt capacity shouldn't reset every time you change this filter. */
+  const periodIncome = state.transactions
+    .filter(t => t.type === "Pemasukan")
+    .filter(t => { const d = parseISO(t.date); return d.getFullYear() === anYear && d.getMonth() + 1 === anMonth; })
+    .reduce((s, t) => s + t.amount, 0);
+
   const totalExpenseDash = konsumtifAmt + nonKonsumtifAmt;
-  const ratio = totalIncome > 0 ? (konsumtifAmt / totalIncome) * 100 : 0;
+  const ratio = periodIncome > 0 ? (konsumtifAmt / periodIncome) * 100 : 0;
 
   const donut = document.getElementById("donutChart");
   const legend = document.getElementById("donutLegend");
@@ -1332,7 +1368,7 @@ function renderAnalisis() {
   statusEl.textContent = tier;
 
   document.getElementById("lifestyleBreakdown").innerHTML = `
-    <div class="kv-row"><span class="k">${dict.total_income_lbl}</span><span class="v">${fmtRp(totalIncome)}</span></div>
+    <div class="kv-row"><span class="k">${dict.total_income_lbl}</span><span class="v">${fmtRp(periodIncome)}</span></div>
     <div class="kv-row"><span class="k">${dict.total_expense_lbl}</span><span class="v">${fmtRp(totalExpenseDash)}</span></div>
     <div class="kv-row"><span class="k">${dict.konsumtif_expense_lbl}</span><span class="v">${fmtRp(konsumtifAmt)}</span></div>
   `;
@@ -1364,7 +1400,7 @@ function renderAnalisis() {
     });
   }
 
-  renderExtraIndicators(totalIncome);
+  renderExtraIndicators(totalIncomeAllTime());
 }
 
 function renderExtraIndicators(totalIncome) {
@@ -1775,7 +1811,7 @@ const SESSION_KEY = "equilife_session_v1";
 /* Fill these in with your own EmailJS account (emailjs.com, free tier)
    to send a real verification email. Leave empty to fall back to an
    on-screen "preview" of the code — the app still works fully either way. */
-const EMAILJS_CONFIG = { publicKey: "XRWAefbK01Qo5SWQf", serviceId: "service_6qpy6jj", templateId: "template_fs9awro" };
+const EMAILJS_CONFIG = { publicKey: "", serviceId: "", templateId: "" };
 
 let currentUser = null; /* { id, email, fullName, birthDate, birthPlace, passwordHash, verified, verifyCode, verifyCodeExpires, createdAt } */
 let pendingVerifyUserId = null;
