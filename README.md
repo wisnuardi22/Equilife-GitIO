@@ -9,17 +9,12 @@ di **GitHub Pages**.
 
 | # | Permintaan | Yang dikerjakan |
 |---|---|---|
-| 1 | Warna ala SAP, jangan "AI banget" | Tema diubah total ke **SAP Fiori Horizon** (light workspace putih/abu‑abu Fiori, biru `#0070F2`, warna semantik good/critical/bad dari palet chart SAP) + sidebar gelap ala *shell bar* Fiori |
-| 2 | Database Excel + tarik ke MySQL + Power BI/Tableau | Tombol **Export ke Excel** (multi-sheet, siap import) + panduan lengkap di bagian 5 |
-| 3 | Sidebar bisa ditutup/dibuka | Tombol `‹ / ›` di atas sidebar, status tersimpan otomatis |
-| 4 | Liability di Overview (Loan, Interest, status, filter bulan/tahun) | Panel **Liability** baru di Overview, di bawah kartu Pemasukan/Pengeluaran/Sisa |
-| 5a | Input utang dengan bunga otomatis | Form **Utang & Cicilan** di menu Transaksi, rumus bunga persis seperti gambar yang kamu kirim |
-| 5b | Kelola kategori dengan "kecerdasan" nomor akun | Form **Kelola Kategori**: ketik nama akun → sistem menyarankan jenis (Harta/Utang/Modal/Pendapatan/Beban) dan nomor kode otomatis |
-| 5c | Investasi (beli/jual, untung/rugi, multi jenis aset) | Form **Investasi** dengan Saham/Crypto/Obligasi/Emas/Reksa Dana/Lainnya, otomatis hitung untung(hijau)/rugi(merah), muncul di Overview sejajar rekening bank |
-| 6 | Kategori baru otomatis muncul di Anggaran | Karena Anggaran membaca daftar kategori yang sama secara langsung, kategori baru/dihapus langsung tersinkron |
-| 7 | Indikator kemampuan bayar utang & alokasi investasi di Analysis | 3 kartu indikator baru: **DSR** (rasio cicilan/pemasukan), **Laba/Rugi Investasi Terealisasi**, **Porsi Investasi dari Total Aset** |
-| 8 | Input nominal penuh (mis. 15.052.500) | Semua input nominal sekarang memakai **rupiah mask** (format titik ribuan otomatis saat mengetik) — bukan `<input type=number>` yang membatasi |
-| — | Cara update situs yang sudah live | Lihat bagian 4 di bawah |
+| 1 | Sumber pemasukan, bukan sekadar rekening tujuan | Transaksi **Pemasukan** sekarang punya field **Sumber Pemasukan**: Gaji Bulanan / Side Income / Penghasilan Lainnya, terpisah dari rekening tujuan |
+| 2 | Semua kata harus bisa diterjemahkan | String yang sebelumnya hardcode (mis. `/bln`) sudah dipindah ke kamus terjemahan ID/EN; hanya isi **Keterangan** (teks bebas dari pengguna) yang memang tidak diterjemahkan |
+| 3 & 7 | Login lengkap + tiap orang datanya sendiri, tidak terlihat orang lain | Sistem **Login/Daftar** penuh (lihat bagian 6) dengan isolasi data per akun |
+| 4 | Budget dari gaji bulanan saja | Target anggaran & live-calc sekarang dihitung dari transaksi **Gaji Bulanan** saja (bukan semua pemasukan); info "Gaji Bulanan bulan ini: Rp …" ditampilkan di atas tabel Monitoring Anggaran |
+| 5 | Export dipertahankan + cara tarik ke MySQL, hide semua info Overview, filter bulan/tahun income & expense, filter tahun tidak cuma 2026, liability dipisah per sumber | Export Excel **tetap ada**, ditambah **Export JSON** untuk otomatisasi (lihat bagian 7); toggle "Sembunyikan" sekarang menyamarkan **semua** angka di Overview; filter bulan/tahun baru untuk kartu Pemasukan/Pengeluaran; rentang tahun di semua filter sekarang luas (bukan cuma 2026); panel Liability punya filter **Sumber** terpisah dari filter bulan/tahun |
+| 6 | Sidebar lebih profesional & fleksibel di HP/tablet | Sidebar dirapikan (kartu profil pengguna, label section "MENU"); di tablet otomatis menyempit jadi ikon saja; di HP jadi **drawer** (menu geser) lewat tombol hamburger, bukan lagi baris ikon yang di-scroll horizontal |
 
 ---
 
@@ -31,6 +26,7 @@ equilife/
 ├── css/style.css
 ├── js/app.js
 ├── assets/logo.png
+├── scripts/sync-to-mysql.py   ← baru: otomasi export→MySQL
 └── README.md
 ```
 
@@ -54,199 +50,183 @@ Situs aktif di `https://USERNAME.github.io/equilife/` dalam 1–2 menit.
 
 ---
 
-## 3. Cara update situs yang sudah live (git add, dst) — INI YANG KAMU TANYAKAN
+## 3. Cara update situs yang sudah live
 
-Karena repo kamu **sudah ada dan sudah ter-deploy**, kamu tidak perlu `git init` lagi.
-Ganti saja file-file lama di folder project kamu dengan file-file baru dari revisi ini
-(timpa `index.html`, `css/style.css`, `js/app.js` — struktur foldernya sama persis),
-lalu dari folder project itu jalankan:
+Timpa file-file lama (`index.html`, `css/style.css`, `js/app.js`, dan tambahkan folder
+`scripts/`) dengan yang baru, lalu dari folder project jalankan:
 
 ```bash
 git add .
-git commit -m "Revisi: tema SAP, liability, utang, investasi, kelola kategori, export excel"
+git commit -m "Revisi: login multi-user, sumber pemasukan, budget dari gaji, sidebar drawer, filter overview"
 git push
 ```
 
-Itu saja — 3 baris. Penjelasan tiap baris:
-- `git add .` → menandai **semua file yang berubah** (termasuk yang baru) untuk di-commit.
-- `git commit -m "pesan"` → menyimpan perubahan itu sebagai satu titik riwayat, dengan
-  pesan bebas menjelaskan apa yang berubah.
-- `git push` → mengirim commit tadi ke GitHub. Karena branch `main` sudah pernah di-set
-  (`git push -u origin main` di awal), cukup `git push` saja, tidak perlu tulis lagi
-  `-u origin main`.
+Tunggu 1–2 menit, refresh `https://USERNAME.github.io/equilife/` (pakai **Ctrl+Shift+R** /
+**Cmd+Shift+R** kalau browser masih menampilkan versi lama dari cache).
 
-Setelah `git push` selesai, tunggu **1–2 menit**, lalu refresh
-`https://USERNAME.github.io/equilife/` (kalau perlu, refresh dengan **Ctrl+Shift+R** /
-**Cmd+Shift+R** supaya browser tidak memakai file lama dari cache).
-
-### Kalau pakai VS Code (tanpa command line)
-1. Timpa file lama dengan file baru di folder project (Explorer di VS Code).
-2. Buka tab **Source Control** (Ctrl+Shift+G).
-3. Semua file yang berubah otomatis terlihat di daftar **Changes**.
-4. Ketik pesan commit di kotak atas, klik ikon **✓ Commit**.
-5. Klik **Sync Changes** (ikon panah) untuk push ke GitHub.
-
-### Cek status / riwayat (opsional, untuk memastikan)
-```bash
-git status          # lihat file apa saja yang berubah sebelum commit
-git log --oneline   # lihat riwayat commit
-```
-
-> **Catatan penting:** karena data (rekening/transaksi/utang/investasi) disimpan di
-> **localStorage browser** (lihat bagian 6), meng-update file situs lewat git **tidak
-> menghapus data pengguna yang sudah tersimpan di browser mereka** — git hanya
-> memperbarui tampilan & logika aplikasinya.
+> **Penting:** karena versi ini menambahkan sistem login, siapa pun yang sudah memakai
+> versi lama (tanpa login) akan diminta mendaftar/masuk saat pertama kali membuka versi
+> baru. Data lama mereka **tidak hilang** — begitu mereka login pertama kali, aplikasi
+> otomatis memindahkan data lama (yang tersimpan tanpa akun) ke akun yang baru dibuat itu.
 
 ---
 
-## 4. Preview lokal sebelum push (disarankan)
+## 4. Preview lokal sebelum push
 
-Supaya tidak salah upload, cek dulu di komputer sendiri:
 - **VS Code**: install extension **Live Server**, klik kanan `index.html` → *Open with Live Server*.
-- **Tanpa VS Code**: cukup buka `index.html` langsung dua‑kali‑klik di file explorer.
+- **Tanpa VS Code**: buka `index.html` langsung dua-kali-klik di file explorer (fitur login
+  tetap jalan meski dibuka lewat `file://`, dengan sedikit catatan keamanan di bagian 6.3).
 
 ---
 
-## 5. Export ke Excel → MySQL → Power BI / Tableau
+## 5. Anggaran berbasis Gaji Bulanan
 
-Karena GitHub Pages tidak bisa menjalankan Python/pandas, alur "database Excel" versi
-ini bekerja seperti ini:
+Target anggaran (baik live-calc Rp⇄% maupun tabel Monitoring) sekarang dihitung dari
+**total transaksi Pemasukan bersumber "Gaji Bulanan" pada bulan berjalan**. Kalau bulan ini
+belum ada transaksi gaji, sistem otomatis memakai bulan terakhir yang punya data gaji,
+supaya anggaran tetap bisa dihitung sebelum gajian berikutnya tercatat.
 
-```
-Aplikasi (localStorage) → tombol "Export Excel" → file .xlsx multi-sheet
-      → import ke MySQL → konek Power BI / Tableau ke MySQL
-```
-
-### 5.1. Export data
-Klik **"⬇ Export Excel"** di sidebar. File `equilife-export-YYYY-MM-DD.xlsx` akan
-terunduh, isinya 6 sheet siap pakai (nama kolom sudah dalam format `snake_case` yang
-gampang di-mapping ke tabel database):
-
-| Sheet | Isi |
-|---|---|
-| `accounts` | rekening bank/dompet, saldo awal & saldo berjalan |
-| `transactions` | seluruh transaksi (pemasukan/pengeluaran/transfer), termasuk `debt_id` bila cicilan terkait utang |
-| `budget_categories` | kategori pos pengeluaran (Beban) beserta target Rp/% |
-| `chart_of_accounts` | akun Harta/Utang/Modal/Pendapatan yang kamu buat lewat Kelola Kategori |
-| `debts` | data utang: kewajiban, admin, diterima, jangka waktu, bunga, status |
-| `investments` | data investasi: beli/jual, modal, laba/rugi |
-
-### 5.2. Import Excel ke MySQL
-
-**Opsi A — MySQL Workbench (paling gampang, GUI):**
-1. Buat database baru: `CREATE DATABASE equilife;`
-2. Klik kanan schema `equilife` → **Table Data Import Wizard**.
-3. Pilih file `.xlsx` → pilih sheet (mis. `transactions`) → wizard otomatis membuat
-   tabel dengan kolom sesuai header sheet tersebut.
-4. Ulangi untuk tiap sheet (`accounts`, `budget_categories`, `chart_of_accounts`,
-   `debts`, `investments`).
-
-**Opsi B — command line (`LOAD DATA INFILE`), kalau Excel sudah disimpan sebagai CSV:**
-```sql
-CREATE TABLE transactions (
-  transaction_id VARCHAR(20) PRIMARY KEY,
-  date DATE,
-  type VARCHAR(20),
-  account_from VARCHAR(100),
-  account_to VARCHAR(100),
-  category_code VARCHAR(10),
-  amount DECIMAL(15,2),
-  notes VARCHAR(255),
-  debt_id VARCHAR(20)
-);
-
-LOAD DATA LOCAL INFILE 'transactions.csv'
-INTO TABLE transactions
-FIELDS TERMINATED BY ',' ENCLOSED BY '"'
-LINES TERMINATED BY '\n'
-IGNORE 1 ROWS;
-```
-(Buat tabel serupa untuk `accounts`, `debts`, `investments`, `budget_categories`,
-`chart_of_accounts` — kolomnya persis mengikuti header di masing-masing sheet Excel.)
-
-**Opsi C — Python (kalau kamu mau belajar sekalian, paling fleksibel untuk otomatisasi):**
-```python
-import pandas as pd
-from sqlalchemy import create_engine
-
-engine = create_engine("mysql+pymysql://user:password@localhost:3306/equilife")
-xls = pd.ExcelFile("equilife-export-2026-08-29.xlsx")
-
-for sheet in xls.sheet_names:
-    df = pd.read_excel(xls, sheet_name=sheet)
-    df.to_sql(sheet, engine, if_exists="replace", index=False)
-```
-Ini otomatis membuat/mengisi ulang semua tabel MySQL dari seluruh sheet sekaligus —
-cocok dijalankan tiap kali kamu export data baru dari aplikasi.
-
-### 5.3. Konek ke Power BI
-1. **Get Data → MySQL database** (kalau belum ada, install **MySQL Connector/NET**
-   dari dev.mysql.com — Power BI butuh ini untuk konek ke MySQL).
-2. Masukkan Server (`localhost:3306` atau alamat server kamu) dan nama database
-   `equilife`.
-3. Pilih tabel-tabel yang tadi diimport (`transactions`, `accounts`, `debts`,
-   `investments`, dst) → **Load**.
-4. Buat relasi antar tabel di **Model view**, misalnya `transactions.category_code`
-   ↔ `budget_categories.category_code`, atau `transactions.debt_id` ↔ `debts.debt_id`.
-5. Dari sini tinggal bikin visual (bar chart pengeluaran per kategori, line chart
-   saldo dari waktu ke waktu, dsb) — sama seperti dashboard Analisis di aplikasi ini,
-   tapi versi Power BI kamu sendiri.
-
-### 5.4. Konek ke Tableau
-1. **Connect → To a Server → MySQL** (kalau connector belum ada, Tableau akan
-   mengarahkan ke halaman download driver MySQL).
-2. Isi Server, Port `3306`, Database `equilife`, lalu Sign In.
-3. Drag tabel-tabel ke kanvas, atur join/relationship sama seperti di Power BI.
-4. Mulai buat worksheet/dashboard dari data yang sudah masuk.
-
-> Alur ini sengaja dipisah manual (export → import → konek) karena GitHub Pages murni
-> hosting statis, tidak bisa menjalankan server database. Kalau nanti kamu mau proses
-> ini **otomatis** (tanpa export manual tiap kali), itu butuh backend sungguhan
-> (mis. Node/Python di server + MySQL beneran, bukan localStorage) — kabari saya kalau
-> mau dibantu ke arah situ, itu proyek lanjutan yang cukup berbeda dari situs statis ini.
+Side Income dan Penghasilan Lainnya **tidak** ikut dihitung sebagai dasar target anggaran —
+tapi tetap masuk ke Total Saldo dan kartu Pemasukan di Overview seperti biasa, karena itu
+tetap uang yang kamu punya, hanya tidak dijadikan basis alokasi anggaran bulanan.
 
 ---
 
-## 6. Tentang penyimpanan data (localStorage)
+## 6. Login & data per pengguna
 
-Data (rekening, transaksi, utang, investasi, kategori) disimpan di **localStorage**
-browser, per perangkat/browser:
-- Tersimpan otomatis setiap tambah/edit/hapus data — tidak perlu "save" manual.
-- Tidak otomatis sinkron antar perangkat/browser (pakai **Export Excel** kalau mau
-  memindahkan data, atau backend sungguhan kalau mau sinkron real-time).
-- Tombol **"Reset data contoh"** di sidebar mengembalikan ke data demo awal.
+### 6.1. Cara kerja
+- **Daftar**: isi Nama Lengkap, Tanggal Lahir, Kota Kelahiran, Email, dan Kata Sandi.
+- Sistem mengirim **kode verifikasi 6 digit**. Kalau kamu belum menyambungkan layanan
+  email (lihat 6.2), kode itu ditampilkan langsung di layar dengan label jelas "Mode
+  pratinjau" — supaya kamu tetap bisa mencoba alurnya tanpa perlu setup apa pun dulu.
+- Setelah kode diverifikasi, kamu otomatis masuk.
+- **Masuk** berikutnya cukup Email + Kata Sandi.
+- Data keuangan (rekening, transaksi, utang, investasi, kategori) disimpan **terpisah per
+  akun** di localStorage browser — akun lain yang login di browser yang sama **tidak bisa
+  melihat data akun kamu**, dan sebaliknya.
+
+### 6.2. Supaya kode verifikasi benar-benar terkirim lewat email
+Situs statis tidak bisa mengirim email sendiri, tapi bisa disambungkan ke layanan pihak
+ketiga **EmailJS** (ada paket gratis, tanpa perlu server):
+1. Daftar di [emailjs.com](https://www.emailjs.com), buat *Email Service* (mis. sambungkan
+   Gmail kamu) dan sebuah *Email Template* dengan variabel `{{to_email}}`, `{{to_name}}`,
+   `{{verify_code}}`.
+2. Tambahkan script EmailJS di `index.html`, sebelum `<script src="js/app.js">`:
+   ```html
+   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+   ```
+3. Di `js/app.js`, isi bagian ini (dekat awal blok AUTH) dengan kunci dari akun EmailJS-mu:
+   ```js
+   const EMAILJS_CONFIG = { publicKey: "xxxx", serviceId: "xxxx", templateId: "xxxx" };
+   ```
+4. Push perubahan (lihat bagian 3). Setelah ini, kode verifikasi betulan terkirim ke email
+   pendaftar — mode pratinjau di layar otomatis tidak muncul lagi.
+
+### 6.3. Catatan jujur soal keamanan
+Ini **bukan sistem autentikasi tingkat enterprise**. Karena semuanya berjalan di browser
+tanpa server sungguhan:
+- Kata sandi di-hash (SHA-256) sebelum disimpan, tapi tetap tersimpan di localStorage
+  perangkat itu — siapa pun yang punya akses fisik/DevTools ke browser tsb bisa membacanya
+  dalam bentuk hash.
+- Tidak ada perlindungan terhadap manipulasi langsung lewat DevTools oleh pengguna yang
+  cukup paham teknis di perangkatnya sendiri.
+- Cocok untuk **penggunaan personal/keluarga/demo**, bukan untuk data sensitif banyak
+  orang yang saling tidak percaya di perangkat bersama.
+- Kalau nanti butuh keamanan sungguhan (password hashing di server, token sesi, dsb), itu
+  perlu backend asli (mis. Node/Express + database) — di luar cakupan situs statis ini,
+  tapi bisa dibantu sebagai proyek lanjutan kalau diperlukan.
 
 ---
 
-## 7. Cara kustomisasi
+## 7. Export data & tarik ke MySQL → Power BI / Tableau
+
+Tombol export **Excel tetap ada** (tidak dihapus), ditambah **Export JSON** yang lebih cocok
+untuk otomatisasi.
+
+### 7.1. Cara paling manual (Excel)
+Klik **"⬇ Export Excel"** → dapat file `.xlsx` 6 sheet (`accounts`, `transactions`,
+`budget_categories`, `chart_of_accounts`, `debts`, `investments`) → import manual ke MySQL
+lewat **Table Data Import Wizard** di MySQL Workbench.
+
+### 7.2. Cara yang lebih otomatis — "menarik", bukan cuma export manual
+Klik **"⬇ Export JSON"**, lalu jalankan script yang sudah disiapkan di
+`scripts/sync-to-mysql.py`:
+
+```bash
+pip install pandas sqlalchemy pymysql
+python scripts/sync-to-mysql.py \
+  --file ~/Downloads/equilife-export-2026-09-01.json \
+  --host localhost --user root --password rahasia --database equilife
+```
+
+Script ini otomatis membuat/menimpa semua tabel MySQL dari satu file JSON — jadi kamu tidak
+perlu klik-klik satu-satu lewat wizard tiap kali. Kalau mau makin otomatis lagi (tanpa perlu
+klik "Export JSON" secara manual sama sekali), jadwalkan lewat **cron** (Linux/Mac) atau
+**Task Scheduler** (Windows) untuk menjalankan script itu di folder Downloads secara berkala.
+
+> **Kenapa tidak bisa "tarik langsung" tanpa file export sama sekali?** Browser tidak
+> diizinkan membuka koneksi TCP mentah ke MySQL (port 3306) — itu batasan keamanan semua
+> browser, bukan batasan situs ini. Supaya benar-benar realtime tanpa file perantara, kamu
+> butuh backend (API kecil di server yang bicara ke MySQL, lalu situs memanggil API itu).
+> Itu proyek lanjutan yang berbeda dari situs statis GitHub Pages ini — kabari saya kalau
+> mau dibantu ke arah situ.
+
+### 7.3. Konek ke Power BI
+**Get Data → MySQL database** → isi Server & Database `equilife` → pilih tabel-tabel hasil
+sync tadi → **Load** → buat relasi di **Model view** (mis. `transactions.category_code` ↔
+`budget_categories.category_code`) → mulai bikin visual.
+
+### 7.4. Konek ke Tableau
+**Connect → To a Server → MySQL** → isi Server, Port `3306`, Database `equilife` → Sign In
+→ drag tabel ke kanvas, atur relationship → mulai bikin worksheet.
+
+---
+
+## 8. Overview: privasi, filter, dan liability per sumber
+
+- Tombol **"Sembunyikan"** di Overview sekarang menyamarkan **semua** angka di halaman itu
+  (saldo total, tiap kartu rekening/investasi, Pemasukan/Pengeluaran/Sisa, angka Liability,
+  dan nominal di daftar Transaksi Terakhir) — bukan cuma saldo rekening seperti sebelumnya.
+- Kartu **Pemasukan / Pengeluaran / Sisa** sekarang punya filter **bulan & tahun** sendiri
+  (sebelumnya selalu "bulan berjalan" dan tidak bisa diubah).
+- Semua filter tahun (Overview, Liability, dst.) sekarang menampilkan rentang tahun yang
+  luas (beberapa tahun ke belakang & ke depan), digabung dengan tahun data asli kamu —
+  bukan cuma menampilkan 2026.
+- Panel **Liability** punya filter **Sumber** (Bank / SPinjam / Paylater / dst.) terpisah
+  dari filter bulan/tahun, jadi kamu bisa melihat angka Total Pokok Pinjaman & Total Bunga
+  untuk satu sumber utang saja, bukan selalu gabungan semua sumber.
+
+---
+
+## 9. Sidebar: profesional & responsif
+
+- **Desktop** (>1024px): sidebar penuh seperti biasa, bisa di-collapse manual lewat tombol `‹ / ›`.
+- **Tablet** (769–1024px): sidebar otomatis menyempit jadi ikon saja, menghemat ruang layar.
+- **HP** (≤768px): sidebar jadi **drawer** (menu geser dari kiri) yang dibuka lewat tombol
+  hamburger di bilah atas, dan ditutup dengan tap di luar area menu — pola yang lebih rapi
+  dibanding baris ikon yang di-scroll horizontal pada versi sebelumnya.
+- Kartu profil pengguna (nama + tombol Keluar) ditambahkan di sidebar bagian bawah.
+
+---
+
+## 10. Cara kustomisasi
 
 - **Ganti logo**: timpa `assets/logo.png`.
-- **Ganti warna**: semua warna adalah CSS variable di `:root` pada `css/style.css`
-  (`--accent`, `--positive`, `--negative`, dst — sudah memakai skema warna semantik
-  ala SAP Fiori: biru untuk aksen, hijau untuk positif, merah untuk negatif, amber
-  untuk peringatan). Sidebar pakai token terpisah berawalan `--shell-*` karena
-  warnanya gelap sedangkan konten utama terang.
-- **Aturan "kecerdasan" nomor akun** (item 5b): lihat `COA_RULES` di `js/app.js` —
-  daftar kata kunci per jenis akun (Harta/Utang/Modal/Pendapatan). Beban adalah
-  default kalau tidak ada kata kunci yang cocok. Tambahkan kata kunci di sana kalau
-  mau perluas deteksinya.
-- **Rumus bunga utang** (item 5a): fungsi `calcDebtInterest()` di `js/app.js`,
-  persis mengikuti rumus di gambar yang kamu kirim:
-  `Total Bunga = (Tagihan per Bulan × Jangka Waktu) − Kewajiban`,
-  `Persentase Bunga = (Total Bunga ÷ Kewajiban) × 100%`.
-- **Kategori/rekening default**: array `budget` dan `accounts` di `buildSeedState()`
-  pada `js/app.js`.
+- **Ganti warna**: CSS variable di `:root` pada `css/style.css` (skema SAP Fiori Horizon —
+  biru aksen, hijau positif, merah negatif, amber peringatan; sidebar pakai token terpisah
+  berawalan `--shell-*` karena warnanya gelap).
+- **Kata kunci sumber pemasukan / kategori COA**: lihat `COA_RULES` di `js/app.js`.
+- **Rumus bunga utang**: fungsi `calcDebtInterest()` di `js/app.js`.
+- **Aktifkan email verifikasi sungguhan**: lihat bagian 6.2.
+- **Kategori/rekening default untuk akun baru**: fungsi `buildSeedState()` di `js/app.js`.
 
 ---
 
-## 8. Catatan desain
+## 11. Tentang penyimpanan data
 
-- Tema **SAP Fiori Horizon**: kanvas konten terang (putih/abu‑abu `#F5F6F7`), aksen
-  biru SAP `#0070F2`, warna semantik dari palet chart SAP (good/critical/bad/neutral),
-  sidebar gelap ala *shell bar* Fiori untuk kontras & orientasi.
-- Semua grafik (donut, bar chart, progress bar) dibuat manual dengan HTML/CSS — bukan
-  library chart generik — supaya terasa fungsional dan bukan template AI/dashboard umum.
-- Sidebar bisa **collapse/expand** (tombol `‹ / ›`), status tersimpan otomatis.
-- Ikon & emoji diminimalkan; navigasi dan tombol pakai label teks.
-- Font **Poppins**, angka pakai tabular numerals, dan semua input nominal memakai
-  rupiah mask supaya bisa mengetik nominal penuh tanpa batasan.
+Data disimpan di **localStorage** browser, per akun, per perangkat/browser:
+- Tersimpan otomatis setiap tambah/edit/hapus — tidak perlu "save" manual.
+- Tidak otomatis sinkron antar perangkat (pakai **Export Excel/JSON** untuk memindahkan
+  data, atau backend sungguhan kalau mau sinkron real-time antar perangkat).
+- Tombol **"Reset data contoh"** di sidebar mengembalikan akun yang sedang login ke kondisi
+  data kosong — akun lain tidak terpengaruh.

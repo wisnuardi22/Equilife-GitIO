@@ -82,6 +82,8 @@ const T = {
     debt_bunga_persen: "Persentase Bunga Total (otomatis)", debt_save: "Simpan Utang",
     debt_list_title: "Daftar Utang", debt_count: (n) => `${n} utang tercatat`,
     debt_aktif: "Aktif", debt_lunas: "Lunas", mark_paid: "Tandai Lunas", mark_active: "Tandai Aktif",
+    tx_debt_link: "Bayar Utang Mana", debt_no_link: "- (Tidak terkait utang tertentu)",
+    debt_remaining_short: "Sisa", debt_progress: (paid, total) => `Terbayar ${paid} dari ${total}`,
     /* investment */
     invest_form_title: "Investasi", invest_form_desc: "Catat pembelian dan penjualan aset investasi",
     invest_buy: "Beli", invest_sell: "Jual",
@@ -202,6 +204,8 @@ const T = {
     debt_bunga_persen: "Total Interest Percentage (auto)", debt_save: "Save Debt",
     debt_list_title: "Debt List", debt_count: (n) => `${n} debts recorded`,
     debt_aktif: "Active", debt_lunas: "Paid Off", mark_paid: "Mark Paid Off", mark_active: "Mark Active",
+    tx_debt_link: "Paying Off Which Debt", debt_no_link: "- (Not linked to a specific debt)",
+    debt_remaining_short: "Remaining", debt_progress: (paid, total) => `Paid ${paid} of ${total}`,
     invest_form_title: "Investments", invest_form_desc: "Record purchases and sales of investment assets",
     invest_buy: "Buy", invest_sell: "Sell",
     invest_jenis: "Investment Type", invest_kode: "Code / Name",
@@ -523,6 +527,7 @@ function setTxSection(name) {
   document.querySelectorAll(".tx-section").forEach(s => s.classList.remove("active"));
   document.getElementById(`txSection-${name}`).classList.add("active");
   document.querySelectorAll("#txSectionGroup .pill").forEach(p => p.classList.toggle("active", p.dataset.section === name));
+  if (name === "tx") renderTxFormOptions();
   if (name === "debt") renderDebtSection();
   if (name === "invest") renderInvestSection();
   if (name === "category") renderCategorySection();
@@ -609,8 +614,19 @@ function renderOverview() {
 
 function debtStatus(debt) {
   if (debt.manualStatus) return debt.manualStatus;
+  const totalToRepay = totalToRepayForDebt(debt);
+  const paid = totalPaidForDebt(debt.id);
+  if (totalToRepay > 0 && paid >= totalToRepay) return "Lunas";
   const end = addMonthsToISO(debt.startDate, debt.jangkaWaktu);
   return todayISO() <= end ? "Aktif" : "Lunas";
+}
+
+const DEBT_CATEGORY_CODE = "5104"; /* "Bayar Utang / Cicilan" — the expense category that can be linked to a specific debt */
+function totalToRepayForDebt(debt) { return debt.tagihanPerBulan * debt.jangkaWaktu; }
+function totalPaidForDebt(debtId) {
+  return state.transactions
+    .filter(t => t.type === "Pengeluaran" && t.debtId === debtId)
+    .reduce((s, t) => s + t.amount, 0);
 }
 
 function populateMonthYearSelect(monthSel, yearSel) {
@@ -658,9 +674,15 @@ function renderLiabilityPanel() {
   const periodStart = `${year}-${String(month).padStart(2, "0")}-01`;
   const sourceFilter = sourceSel.value || "__all";
 
+  const periodEndExclusive = addMonthsToISO(periodStart, 1); /* first day of the following month */
   const debtsInPeriod = state.debts.filter(d => {
     const end = addMonthsToISO(d.startDate, d.jangkaWaktu);
-    const inPeriod = d.startDate <= periodStart && periodStart <= end;
+    /* overlap check: the loan's active range [startDate, end] intersects
+       the selected month's range [periodStart, periodEndExclusive) —
+       previously this required startDate to fall on/before the 1st of the
+       month, which wrongly hid loans that started mid-month from their
+       own starting month. */
+    const inPeriod = d.startDate < periodEndExclusive && periodStart <= end;
     const sourceMatch = sourceFilter === "__all" || d.source === sourceFilter;
     return inPeriod && sourceMatch;
   });
@@ -685,6 +707,7 @@ function renderLiabilityPanel() {
   } else {
     debtsInPeriod.forEach(d => {
       const status = debtStatus(d);
+      const remaining = Math.max(totalToRepayForDebt(d) - totalPaidForDebt(d.id), 0);
       const row = document.createElement("div");
       row.className = "tx-row";
       row.innerHTML = `
@@ -692,7 +715,7 @@ function renderLiabilityPanel() {
           <span class="tx-dot out"></span>
           <div class="tx-info">
             <div class="tx-title">${escapeHtml(d.source)} ${d.notes ? "· " + escapeHtml(d.notes) : ""}</div>
-            <div class="tx-meta">${dict.debt_tagihan}: ${state.showBalance ? fmtRp(d.tagihanPerBulan) : "Rp ••••••"}${dict.per_month} · ${d.jangkaWaktu} ${dict.months_unit}</div>
+            <div class="tx-meta">${dict.debt_tagihan}: ${state.showBalance ? fmtRp(d.tagihanPerBulan) : "Rp ••••••"}${dict.per_month} · ${d.jangkaWaktu} ${dict.months_unit} · ${dict.debt_remaining_short}: ${state.showBalance ? fmtRp(remaining) : "Rp ••••••"}</div>
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:10px;">
@@ -751,6 +774,7 @@ function incomeSourceLabel(src) {
 let txType = "Pengeluaran";
 
 function renderTxFormOptions() {
+  const dict = tr();
   const accFrom = document.getElementById("txAccFrom");
   const accTo = document.getElementById("txAccTo");
   const cat = document.getElementById("txCategory");
@@ -761,6 +785,24 @@ function renderTxFormOptions() {
   });
   if (accTo.selectedIndex === 0 && state.accounts.length > 1) accTo.selectedIndex = 1;
   cat.innerHTML = state.budget.map(b => `<option value="${b.code}">${b.code} — ${escapeHtml(b.name)}</option>`).join("");
+
+  const debtLink = document.getElementById("txDebtLink");
+  const prevDebtLink = debtLink.value;
+  const activeDebts = state.debts.filter(d => debtStatus(d) === "Aktif");
+  debtLink.innerHTML = `<option value="">${dict.debt_no_link}</option>` + activeDebts.map(d => {
+    const remaining = totalToRepayForDebt(d) - totalPaidForDebt(d.id);
+    return `<option value="${d.id}">${escapeHtml(d.source)}${d.notes ? " · " + escapeHtml(d.notes) : ""} — ${dict.debt_remaining_short}: ${fmtRp(remaining)}</option>`;
+  }).join("");
+  if ([...debtLink.options].some(o => o.value === prevDebtLink)) debtLink.value = prevDebtLink;
+
+  updateDebtLinkVisibility();
+}
+
+function updateDebtLinkVisibility() {
+  const fieldDebtLink = document.getElementById("fieldDebtLink");
+  const cat = document.getElementById("txCategory").value;
+  const show = txType === "Pengeluaran" && cat === DEBT_CATEGORY_CODE;
+  fieldDebtLink.classList.toggle("hidden", !show);
 }
 
 function applyTxTypeUI() {
@@ -790,6 +832,7 @@ function applyTxTypeUI() {
     labelAccFrom.textContent = dict.from_acc;
     labelAccTo.textContent = dict.to_acc;
   }
+  updateDebtLinkVisibility();
 }
 
 function renderTransaksi() {
@@ -853,6 +896,10 @@ function renderDebtSection() {
   }
   [...state.debts].sort((a, b) => (a.startDate < b.startDate ? 1 : -1)).forEach(d => {
     const status = debtStatus(d);
+    const totalToRepay = totalToRepayForDebt(d);
+    const paid = totalPaidForDebt(d.id);
+    const remaining = Math.max(totalToRepay - paid, 0);
+    const pct = totalToRepay > 0 ? Math.min((paid / totalToRepay) * 100, 100) : 0;
     const row = document.createElement("div");
     row.className = "tx-row";
     row.innerHTML = `
@@ -861,6 +908,8 @@ function renderDebtSection() {
         <div class="tx-info">
           <div class="tx-title">${escapeHtml(d.source)} ${d.notes ? "· " + escapeHtml(d.notes) : ""}</div>
           <div class="tx-meta">${fmtDateDisplay(d.startDate)} · ${fmtRp(d.tagihanPerBulan)}${dict.per_month} × ${d.jangkaWaktu}${dict.months_unit} · ${dict.debt_bunga_persen_short} ${d.persenBunga.toFixed(2)}%</div>
+          <div class="tx-meta">${dict.debt_progress(fmtRp(paid), fmtRp(totalToRepay))} · ${dict.debt_remaining_short}: ${fmtRp(remaining)}</div>
+          <div class="rank-track" style="margin-top:4px;max-width:220px;"><div class="rank-fill N" style="width:${pct}%"></div></div>
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
@@ -882,6 +931,7 @@ function renderDebtSection() {
     saveState();
     renderDebtSection();
     renderOverview();
+    renderTxFormOptions();
     if (currentView === "analisis") renderAnalisis();
   }));
   list.querySelectorAll(".del-debt").forEach(b => b.addEventListener("click", () => {
@@ -890,6 +940,7 @@ function renderDebtSection() {
       saveState();
       renderDebtSection();
       renderOverview();
+      renderTxFormOptions();
       if (currentView === "analisis") renderAnalisis();
     }
   }));
@@ -1478,6 +1529,8 @@ function buildExportTables() {
       kewajiban_principal: d.kewajiban, admin_fee: d.admin, amount_received: d.diterima,
       term_months: d.jangkaWaktu, monthly_installment: d.tagihanPerBulan,
       total_interest_amount: d.totalBunga, total_interest_percent: d.persenBunga,
+      total_to_repay: totalToRepayForDebt(d), amount_paid: totalPaidForDebt(d.id),
+      amount_remaining: Math.max(totalToRepayForDebt(d) - totalPaidForDebt(d.id), 0),
       status: debtStatus(d), notes: d.notes || "",
     })),
     investments: state.investments.map(i => ({
@@ -1619,6 +1672,8 @@ function init() {
   const txAmountHint = document.getElementById("txAmountHint");
   txAmount.addEventListener("rupiahchange", () => { txAmountHint.textContent = fmtRp(rawNumber(txAmount)); });
 
+  document.getElementById("txCategory").addEventListener("change", updateDebtLinkVisibility);
+
   document.getElementById("txForm").addEventListener("submit", (e) => {
     e.preventDefault();
     const date = document.getElementById("txDate").value || todayISO();
@@ -1628,6 +1683,7 @@ function init() {
     const accTo = document.getElementById("txAccTo").value;
     const category = document.getElementById("txCategory").value;
     const incomeSource = document.getElementById("txIncomeSource").value;
+    const debtLinkId = document.getElementById("txDebtLink").value;
 
     const tx = {
       date, type: txType,
@@ -1635,6 +1691,7 @@ function init() {
       accountTo: txType === "Pengeluaran" ? "-" : accTo,
       categoryCode: txType === "Pengeluaran" ? category : "-",
       incomeSource: txType === "Pemasukan" ? incomeSource : "-",
+      debtId: (txType === "Pengeluaran" && category === DEBT_CATEGORY_CODE && debtLinkId) ? debtLinkId : null,
       amount, notes,
     };
     addTransaction(tx);
@@ -1717,6 +1774,7 @@ function init() {
     recalcDebtFormPreview();
     renderDebtSection();
     renderOverview();
+    renderTxFormOptions();
     if (currentView === "analisis") renderAnalisis();
     flash(e.target.querySelector("button[type=submit]"), tr().saved_ok);
   });
