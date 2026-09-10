@@ -50,10 +50,10 @@ const T = {
     correct_title: "Koreksi Transaksi", save_changes: "Simpan Perubahan",
     no_tx: "Belum ada transaksi. Tambahkan transaksi pertamamu di menu Transaksi.",
     no_data_chart: "Belum ada data untuk ditampilkan.",
-    income_info: (v) => `Total pemasukan tercatat pada periode ini: <strong>${v}</strong>`,
-    no_income_warn: "Belum ada pemasukan tercatat. Tambahkan transaksi pemasukan agar target dapat dihitung otomatis.",
-    salary_info: (v, m) => `Anggaran ini dihitung dari total pemasukan bulan ${m}: <strong>${v}</strong>`,
-    no_salary_warn: "Belum ada transaksi Pemasukan pada bulan ini.",
+    income_info: (v) => `Total Gaji tercatat pada periode ini: <strong>${v}</strong>`,
+    no_income_warn: "Belum ada Pemasukan dengan sumber 'Gaji' tercatat. Tambahkan transaksi Gaji agar target dapat dihitung otomatis.",
+    salary_info: (v, m) => `Anggaran ini dihitung dari Gaji bulan ${m}: <strong>${v}</strong>`,
+    no_salary_warn: "Belum ada transaksi Gaji pada bulan ini.",
     total_ok: "Total alokasi persentase sudah 100% — sempurna.",
     total_warn: (p) => `Total alokasi persentase saat ini ${p}% — idealnya mencapai 100%.`,
     reset_data: "Reset data contoh",
@@ -168,10 +168,10 @@ const T = {
     correct_title: "Correct Transaction", save_changes: "Save Changes",
     no_tx: "No transactions yet.",
     no_data_chart: "Nothing to display yet.",
-    income_info: (v) => `Total recorded income this period: <strong>${v}</strong>`,
-    no_income_warn: "No income recorded yet.",
-    salary_info: (v, m) => `This budget is calculated from total income in ${m}: <strong>${v}</strong>`,
-    no_salary_warn: "No income recorded for this month.",
+    income_info: (v) => `Total Salary recorded this period: <strong>${v}</strong>`,
+    no_income_warn: "No Salary income recorded yet.",
+    salary_info: (v, m) => `This budget is calculated from Salary in ${m}: <strong>${v}</strong>`,
+    no_salary_warn: "No Salary income recorded for this month.",
     total_ok: "Total allocation is 100% — perfect.",
     total_warn: (p) => `Current allocation total is ${p}% — ideally it should reach 100%.`,
     reset_data: "Reset sample data",
@@ -696,7 +696,7 @@ function renderTxRow(tx, withActions) {
   const typeLabel = tx.type === "Pemasukan" ? dict.income : tx.type === "Pengeluaran" ? dict.expense : dict.transfer;
   let acc;
   if (tx.type === "Pengeluaran") acc = tx.accountFrom;
-  else if (tx.type === "Pemasukan") acc = `${tx.accountTo}`;
+  else if (tx.type === "Pemasukan") acc = `${tx.accountFrom} → ${tx.accountTo}`;
   else acc = `${tx.accountFrom} → ${tx.accountTo}`;
 
   row.innerHTML = `
@@ -725,8 +725,20 @@ function renderTxFormOptions() {
   const accFrom = document.getElementById("txAccFrom");
   const accTo = document.getElementById("txAccTo");
   const cat = document.getElementById("txCategory");
-  
-  const accountOptions = [...state.accounts.map(a => a.name), "Paylater"];
+  const labelAccFrom = document.getElementById("labelAccFrom");
+
+  let accountOptions = [];
+  if (txType === "Pemasukan") {
+    labelAccFrom.textContent = "Sumber Pendapatan";
+    accountOptions = ["Gaji", "Side Job", "Utang", "Lainnya"];
+  } else if (txType === "Pengeluaran") {
+    labelAccFrom.textContent = dict.acc_from;
+    accountOptions = [...state.accounts.map(a => a.name), "Paylater"];
+  } else {
+    labelAccFrom.textContent = dict.acc_from;
+    accountOptions = state.accounts.map(a => a.name);
+  }
+
   const prevFrom = accFrom.value;
   const prevTo = accTo.value;
 
@@ -777,23 +789,23 @@ function applyTxTypeUI() {
   const fieldCategory = document.getElementById("fieldCategory");
   const labelAccTo = document.getElementById("labelAccTo");
 
+  fieldAccFrom.classList.remove("hidden");
+
   if (txType === "Pengeluaran") {
-    fieldAccFrom.classList.remove("hidden");
     fieldAccTo.classList.add("hidden");
     fieldCategory.classList.remove("hidden");
     updatePaylaterTenorVisibility();
   } else if (txType === "Pemasukan") {
-    fieldAccFrom.classList.add("hidden");
     if (fieldPaylaterTenor) fieldPaylaterTenor.classList.add("hidden");
     fieldAccTo.classList.remove("hidden");
     fieldCategory.classList.add("hidden");
     labelAccTo.textContent = dict.acc_to;
   } else {
-    fieldAccFrom.classList.remove("hidden");
     if (fieldPaylaterTenor) fieldPaylaterTenor.classList.add("hidden");
     fieldAccTo.classList.remove("hidden");
     fieldCategory.classList.add("hidden");
   }
+  renderTxFormOptions();
   updateDebtLinkVisibility();
 }
 
@@ -1130,12 +1142,8 @@ function monthlySalaryBasis(year, month) {
     if (t.type !== "Pemasukan") return false;
     const d = parseISO(t.date);
     const matchDate = d.getFullYear() === year && d.getMonth() + 1 === month;
-    
-    // HANYA AMBIL PEMASUKAN YANG BERASAL DARI GAJI (Cek dari catatan/notes atau sumber)
-    const noteLower = (t.notes || "").toLowerCase();
-    const sourceLower = (t.incomeSource || "").toLowerCase();
-    const isSalary = noteLower.includes("gaji") || sourceLower.includes("gaji") || noteLower.includes("salary") || sourceLower.includes("salary");
-    
+    const source = (t.accountFrom || "").toLowerCase();
+    const isSalary = source.includes("gaji");
     return matchDate && isSalary;
   });
 
@@ -1693,7 +1701,7 @@ function init() {
 
     const tx = {
       date, type: txType,
-      accountFrom: txType === "Pemasukan" ? "-" : accFrom,
+      accountFrom: txType === "Pemasukan" ? document.getElementById("txAccFrom").value : accFrom,
       accountTo: txType === "Pengeluaran" ? "-" : accTo,
       categoryCode: txType === "Pengeluaran" ? category : "-",
       incomeSource: "-",
