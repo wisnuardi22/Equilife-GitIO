@@ -878,7 +878,7 @@ function renderDebtSection() {
   [...state.debts].sort((a, b) => (a.startDate < b.startDate ? 1 : -1)).forEach(d => {
     const status = debtStatus(d);
     const totalToRepay = totalToRepayForDebt(d);
-    const paid = totalPaidForDebt(d.id);
+    const paid = totalPaidForDebt(d.id); // <-- Pastikan ini dipanggil
     const remaining = Math.max(totalToRepay - paid, 0);
     const pct = totalToRepay > 0 ? Math.min((paid / totalToRepay) * 100, 100) : 0;
     const row = document.createElement("div");
