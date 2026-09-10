@@ -124,6 +124,7 @@ const T = {
     auth_err_code_wrong: "Kode verifikasi yang Anda masukkan tidak valid.",
     auth_err_generic: "Terjadi kendala teknis yang tidak terduga.",
     tenor_label: "Pilihan Tenor Cicilan",
+    src_gaji: "Gaji", src_sidejob: "Side Job", src_hutang: "Hutang", src_lainnya: "Lainnya",
   },
   EN: {
     tagline: "Personal Financial Records",
@@ -243,6 +244,7 @@ const T = {
     auth_err_code_wrong: "The verification code you entered is invalid.",
     auth_err_generic: "An unexpected technical issue occurred.",
     tenor_label: "Installment Term (Months)",
+    src_gaji: "Salary", src_sidejob: "Side Job", src_hutang: "Debt", src_lainnya: "Other",
   }
 };
 
@@ -733,7 +735,6 @@ function renderTxFormOptions() {
   let accountOptions = [];
   if (txType === "Pemasukan") {
     labelAccFrom.textContent = state.lang === "ID" ? "Sumber Pendapatan" : "Income Source";
-    // Menggunakan key terjemahan dinamis agar ikut bahasa
     accountOptions = [
       { val: "Gaji", label: dict.src_gaji },
       { val: "Side Job", label: dict.src_sidejob },
@@ -751,7 +752,6 @@ function renderTxFormOptions() {
   const prevFrom = accFrom.value;
   const prevTo = accTo.value;
 
-  // Render opsi dropdown dengan mendukung object label & value
   accFrom.innerHTML = accountOptions.map(opt => `<option value="${escapeHtml(opt.val)}">${escapeHtml(opt.label)}</option>`).join("");
   if (prevFrom && accountOptions.some(opt => opt.val === prevFrom)) accFrom.value = prevFrom;
 
