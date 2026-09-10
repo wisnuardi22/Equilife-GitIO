@@ -394,7 +394,7 @@ button:focus-visible, input:focus-visible, select:focus-visible{
   background:var(--surface);
   border:1px solid var(--border);
   border-radius:var(--radius);
-  padding:16px; /* <-- Ubah bagian ini */
+  padding:16px;
   margin:10px 0 20px 0;
 }
 
@@ -416,13 +416,13 @@ button:focus-visible, input:focus-visible, select:focus-visible{
 .summary-value.positive{ color:var(--positive); }
 .summary-value.negative{ color:var(--negative); }
 
-.panel {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 26px 24px; /* Padding atas-bawah diperbesar menjadi 26px */
-  margin-bottom: 18px;
-  box-shadow: var(--shadow-card);
+.panel{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:18px 20px;
+  margin-bottom:18px;
+  box-shadow:var(--shadow-card);
 }
 .panel-header{
   display:flex;
@@ -469,11 +469,11 @@ button:focus-visible, input:focus-visible, select:focus-visible{
 /* ==========================================================================
    Forms
    ========================================================================== */
-.grid-form {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-  padding: 12px 0 8px 0; /* Tambahkan jarak di dalam form */
+.grid-form{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:14px;
+  margin-top:12px;
 }
 .field{ display:flex; flex-direction:column; gap:5px; }
 .field-wide{ grid-column:1 / -1; }
@@ -706,12 +706,6 @@ button:focus-visible, input:focus-visible, select:focus-visible{
   padding:8px 10px; font-size:0.78rem; margin:0;
 }
 .auth-disclaimer{ font-size:0.68rem; color:var(--text-faint); margin:18px 0 0 0; line-height:1.5; }
-
-.acc-avatar img {
-  width: 20px;
-  height: 20px;
-  object-fit: contain;
-}
 
 /* ==========================================================================
    Responsive
