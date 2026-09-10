@@ -416,13 +416,13 @@ button:focus-visible, input:focus-visible, select:focus-visible{
 .summary-value.positive{ color:var(--positive); }
 .summary-value.negative{ color:var(--negative); }
 
-.panel{
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  padding:18px 20px; /* <-- Ubah bagian ini jika card utamanya adalah .panel */
-  margin-bottom:18px;
-  box-shadow:var(--shadow-card);
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 26px 24px; /* Padding atas-bawah diperbesar menjadi 26px */
+  margin-bottom: 18px;
+  box-shadow: var(--shadow-card);
 }
 .panel-header{
   display:flex;
@@ -469,11 +469,11 @@ button:focus-visible, input:focus-visible, select:focus-visible{
 /* ==========================================================================
    Forms
    ========================================================================== */
-.grid-form{
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:14px;
-  margin-top:12px;
+.grid-form {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  padding: 12px 0 8px 0; /* Tambahkan jarak di dalam form */
 }
 .field{ display:flex; flex-direction:column; gap:5px; }
 .field-wide{ grid-column:1 / -1; }
