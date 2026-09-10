@@ -209,7 +209,7 @@
       <div class="panel">
         <div class="panel-header">
           <div>
-            <h3 data-i18n="liability_title">Liability (Utang)</h3>
+            <h3 data-i18n="liability_title">Hutang (Liability)</h3>
             <p class="muted small" data-i18n="liability_desc">Ringkasan pinjaman dan bunga berjalan</p>
           </div>
           <div class="filter-inline">
@@ -236,7 +236,7 @@
 
       <div class="pill-group" id="txSectionGroup">
         <button class="pill active" data-section="tx" data-i18n="sec_tx">Transaksi</button>
-        <button class="pill" data-section="debt" data-i18n="sec_debt">Utang &amp; Cicilan</button>
+        <button class="pill" data-section="debt" data-i18n="sec_debt">Hutang &amp; Cicilan</button>
         <button class="pill" data-section="invest" data-i18n="sec_invest">Investasi</button>
         <button class="pill" data-section="category" data-i18n="sec_category">Kelola Kategori</button>
       </div>
@@ -281,7 +281,7 @@
               <select id="txCategory"></select>
             </div>
             <div class="field hidden" id="fieldDebtLink">
-              <label data-i18n="tx_debt_link">Bayar Utang Mana</label>
+              <label data-i18n="tx_debt_link">Bayar Hutang Mana</label>
               <select id="txDebtLink"></select>
             </div>
             <div class="field">
@@ -313,13 +313,13 @@
         <div class="panel">
           <div class="panel-header">
             <div>
-              <h3 data-i18n="debt_form_title">Tambah Utang / Pinjaman</h3>
+              <h3 data-i18n="debt_form_title">Tambah Hutang / Pinjaman</h3>
               <p class="muted small" data-i18n="debt_form_desc">Kewajiban, admin, dan bunga terhitung otomatis</p>
             </div>
           </div>
           <form id="debtForm" class="grid-form">
             <div class="field">
-              <label data-i18n="debt_source">Sumber Utang</label>
+              <label data-i18n="debt_source">Sumber Hutang</label>
               <select id="debtSource">
                 <option>Bank</option>
                 <option>SPinjam</option>
@@ -340,7 +340,7 @@
               <input type="text" inputmode="numeric" id="debtAdmin" value="0">
             </div>
             <div class="field">
-              <label data-i18n="debt_diterima">Utang yang Diterima</label>
+              <label data-i18n="debt_diterima">Hutang yang Diterima</label>
               <span class="locked-value" id="debtDiterima">Rp 0</span>
             </div>
             <div class="field">
@@ -364,14 +364,14 @@
               <input type="text" id="debtNotes" placeholder="mis. Cicilan laptop...">
             </div>
             <div class="field-actions field-wide">
-              <button type="submit" class="btn-primary" data-i18n="debt_save">Simpan Utang</button>
+              <button type="submit" class="btn-primary" data-i18n="debt_save">Simpan Hutang</button>
             </div>
           </form>
         </div>
         <div class="panel">
           <div class="panel-header">
             <div>
-              <h3 data-i18n="debt_list_title">Daftar Utang</h3>
+              <h3 data-i18n="debt_list_title">Daftar Hutang</h3>
               <p class="muted small" id="debtCount"></p>
             </div>
           </div>
@@ -457,7 +457,7 @@
               <label data-i18n="cat_jenis">Jenis</label>
               <select id="catJenis">
                 <option value="Harta" data-i18n="jenis_harta">Harta</option>
-                <option value="Utang" data-i18n="jenis_utang">Utang</option>
+                <option value="Hutang" data-i18n="jenis_hutang">Hutang</option>
                 <option value="Modal" data-i18n="jenis_modal">Modal</option>
                 <option value="Pendapatan" data-i18n="jenis_pendapatan">Pendapatan</option>
                 <option value="Beban" data-i18n="jenis_beban" selected>Beban</option>
@@ -632,7 +632,7 @@
         <div class="panel-header">
           <div>
             <h3 data-i18n="extra_indicators_title">Indikator Kesehatan Keuangan</h3>
-            <p class="muted small" data-i18n="extra_indicators_desc">Kemampuan bayar utang dan alokasi investasi</p>
+            <p class="muted small" data-i18n="extra_indicators_desc">Kemampuan bayar hutang dan alokasi investasi</p>
           </div>
         </div>
         <div class="indicator-grid" id="extraIndicators"></div>

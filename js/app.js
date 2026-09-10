@@ -10,7 +10,7 @@ const T = {
     tagline: "Pencatatan Keuangan Pribadi",
     nav_overview: "Overview", nav_transaksi: "Transaksi", nav_anggaran: "Anggaran", nav_analisis: "Analisis",
     page_sub_overview: "Ringkasan saldo, kewajiban, dan aktivitas finansial Anda",
-    page_sub_transaksi: "Kelola transaksi harian, utang, investasi, dan kategori akun",
+    page_sub_transaksi: "Kelola transaksi harian, hutang, investasi, dan kategori akun",
     page_sub_anggaran: "Atur target pos anggaran dan pantau realisasi bulanan",
     page_sub_analisis: "Evaluasi pola pengeluaran dan indikator kesehatan keuangan",
     total_balance: "TOTAL SALDO KESELURUHAN",
@@ -31,7 +31,7 @@ const T = {
     amount: "Nominal Transaksi (Rp)", notes: "Keterangan",
     tx_history: "Riwayat Transaksi",
     tx_count: (n) => `${n} transaksi tercatat`,
-    sec_tx: "Transaksi", sec_debt: "Utang & Cicilan", sec_invest: "Investasi", sec_category: "Kelola Kategori",
+    sec_tx: "Transaksi", sec_debt: "Hutang & Cicilan", sec_invest: "Investasi", sec_category: "Kelola Kategori",
     setting_title: "Target Anggaran & Perhitungan Gaji",
     setting_desc: "Sesuaikan alokasi nominal (Rp) atau persentase (%) berdasarkan basis Gaji.",
     budget_period_title: "PERIODE ANGGARAN BULANAN",
@@ -60,23 +60,23 @@ const T = {
     export_lib_missing: "Library ekspor Excel belum dimuat. Periksa koneksi internet Anda.",
     reset_confirm: "Tindakan ini akan menghapus seluruh data lokal Anda dan mereset ke data awal. Lanjutkan?",
     delete_confirm: "Hapus transaksi ini? Saldo rekening akan disesuaikan kembali secara otomatis.",
-    delete_debt_confirm: "Hapus data rekaman utang ini?",
+    delete_debt_confirm: "Hapus data rekaman hutang ini?",
     delete_cat_confirm: "Hapus kategori ini dari sistem?",
     saved_ok: "Berhasil Disimpan ✓",
     konsumtif: "Konsumtif", nonkonsumtif: "Non-Konsumtif",
-    liability_title: "Kewajiban Utang (Liability)", liability_desc: "Pantauan pinjaman, cicilan, dan bunga berjalan",
-    cashflow_title: "ARUS KAS BULANAN", all_sources: "Semua Sumber Utang",
+    liability_title: "Kewajiban Hutang (Liability)", liability_desc: "Pantauan pinjaman, cicilan, dan bunga berjalan",
+    cashflow_title: "ARUS KAS BULANAN", all_sources: "Semua Sumber Hutang",
     liab_total_loan: "Total Pokok Pinjaman Aktif", liab_total_interest: "Total Beban Bunga Berjalan",
-    no_debt: "Tidak ada catatan utang aktif pada periode terpilih.",
-    debt_form_title: "Tambah Pinjaman / Utang Baru", debt_form_desc: "Kewajiban pokok, biaya admin, dan bunga dihitung secara presisi",
-    debt_source: "Lembaga / Sumber Utang", debt_start: "Tanggal Mulai",
+    no_debt: "Tidak ada catatan hutang aktif pada periode terpilih.",
+    debt_form_title: "Tambah Pinjaman / Hutang Baru", debt_form_desc: "Kewajiban pokok, biaya admin, dan bunga dihitung secara presisi",
+    debt_source: "Lembaga / Sumber Hutang", debt_start: "Tanggal Mulai",
     debt_kewajiban: "Kewajiban Pokok Pinjaman", debt_admin: "Biaya Administrasi",
     debt_diterima: "Dana Bersih Diterima", debt_jangka: "Tenor Jangka Waktu (Bulan)",
     debt_tagihan: "Cicilan Tagihan per Bulan", debt_bunga_nominal: "Akumulasi Bunga Total",
-    debt_bunga_persen: "Persentase Bunga Efektif", debt_save: "Simpan Data Utang",
-    debt_list_title: "Daftar Utang & Pinjaman", debt_count: (n) => `${n} utang tercatat`,
+    debt_bunga_persen: "Persentase Bunga Efektif", debt_save: "Simpan Data Hutang",
+    debt_list_title: "Daftar Hutang & Pinjaman", debt_count: (n) => `${n} hutang tercatat`,
     debt_aktif: "Aktif", debt_lunas: "Lunas", mark_paid: "Tandai Lunas", mark_active: "Tandai Aktif",
-    tx_debt_link: "Tautkan ke Cicilan Utang", debt_no_link: "- (Pengeluaran umum / Bebas utang)",
+    tx_debt_link: "Tautkan ke Cicilan Hutang", debt_no_link: "- (Pengeluaran umum / Bebas hutang)",
     debt_remaining_short: "Sisa Sembuh", debt_progress: (paid, total) => `Terbayar ${paid} dari ${total}`,
     invest_form_title: "Pencatatan Investasi", invest_form_desc: "Rekam aktivitas pembelian maupun pelepasan aset investasi",
     invest_buy: "Beli Aset", invest_sell: "Jual Aset",
@@ -92,14 +92,14 @@ const T = {
     cat_name: "Nama Akun / Kategori", cat_jenis: "Klasifikasi Akun", cat_code: "Kode Akun",
     cat_konsumtif_type: "Klasifikasi Beban", cat_add: "Tambah Akun", cat_update: "Perbarui Akun",
     cat_list_title: "Daftar Akun & Kategori Keuangan",
-    jenis_harta: "Harta (Asset)", jenis_utang: "Utang (Liability)", jenis_modal: "Modal (Equity)", jenis_pendapatan: "Pendapatan (Revenue)", jenis_beban: "Beban (Expense)",
+    jenis_harta: "Harta (Asset)", jenis_hutang: "Hutang (Liability)", jenis_modal: "Modal (Equity)", jenis_pendapatan: "Pendapatan (Revenue)", jenis_beban: "Beban (Expense)",
     edit: "Ubah", delete: "Hapus",
     cat_name_required: "Nama akun atau kategori wajib diisi.",
     cat_code_exists: "Kode akun tersebut sudah digunakan.",
     extra_indicators_title: "Indikator Kesehatan Finansial Utama",
     extra_indicators_desc: "Analisis rasio cicilan, akumulasi profit, dan porsi aset.",
     dsr_title: "Debt Service Ratio (DSR)",
-    dsr_note: "Perbandingan total cicilan utang bulanan terhadap rata-rata Gaji.",
+    dsr_note: "Perbandingan total cicilan hutang bulanan terhadap rata-rata Gaji.",
     dsr_sehat: "Sehat", dsr_waspada: "Waspada", dsr_berisiko: "Berisiko Tinggi",
     invest_realized_title: "Laba / Rugi Investasi Terealisasi",
     invest_realized_note: "Akumulasi selisih jual bersih terhadap modal aset yang telah dilepas.",
@@ -211,7 +211,7 @@ const T = {
     cat_name: "Account / Category Name", cat_jenis: "Account Classification", cat_code: "Account Code",
     cat_konsumtif_type: "Expense Classification", cat_add: "Add Account", cat_update: "Update Account",
     cat_list_title: "Financial Accounts & Categories List",
-    jenis_harta: "Asset", jenis_utang: "Liability", jenis_modal: "Equity", jenis_pendapatan: "Revenue", jenis_beban: "Expense",
+    jenis_harta: "Asset", jenis_hutang: "Liability", jenis_modal: "Equity", jenis_pendapatan: "Revenue", jenis_beban: "Expense",
     edit: "Edit", delete: "Delete",
     cat_name_required: "Account or category name is required.",
     cat_code_exists: "Account code is already in use.",
@@ -247,7 +247,7 @@ const T = {
 };
 
 const COA_RULES = [
-  { jenis: "Utang", prefix: "2", keywords: ["utang", "hutang", "pinjam", "kredit", "cicilan", "paylater", "pay later", "spinjam", "kta", "kartu kredit", "kpr", "debt", "loan"] },
+  { jenis: "Hutang", prefix: "2", keywords: ["hutang", "utang", "pinjam", "kredit", "cicilan", "paylater", "pay later", "spinjam", "kta", "kartu kredit", "kpr", "debt", "loan"] },
   { jenis: "Modal", prefix: "3", keywords: ["modal", "ekuitas", "equity", "saldo awal"] },
   { jenis: "Pendapatan", prefix: "4", keywords: ["gaji", "pendapatan", "bonus", "komisi", "honor", "thr", "freelance", "income", "salary"] },
   { jenis: "Harta", prefix: "1", keywords: ["bank", "tabungan", "kas", "dompet", "emas", "saham", "investasi", "crypto", "reksadana", "obligasi", "deposito", "giro", "piutang", "asset", "wallet"] },
@@ -257,7 +257,7 @@ function suggestJenis(name) {
   for (const rule of COA_RULES) { if (rule.keywords.some(k => s.includes(k))) return rule.jenis; }
   return "Beban";
 }
-const JENIS_PREFIX = { Harta: "1", Utang: "2", Modal: "3", Pendapatan: "4", Beban: "5" };
+const JENIS_PREFIX = { Harta: "1", Hutang: "2", Modal: "3", Pendapatan: "4", Beban: "5" };
 
 let state = null;
 let draftBudget = null;
@@ -277,7 +277,7 @@ function buildSeedState() {
     { code: "5101", name: "Zakat & Sedekah", type: "Non-Konsumtif", targetPercent: 0, targetBudget: 0 },
     { code: "5102", name: "Transfer Orang Tua", type: "Non-Konsumtif", targetPercent: 0, targetBudget: 0 },
     { code: "5103", name: "Sewa Kost", type: "Non-Konsumtif", targetPercent: 0, targetBudget: 0 },
-    { code: "5104", name: "Bayar Utang / Cicilan", type: "Non-Konsumtif", targetPercent: 0, targetBudget: 0 },
+    { code: "5104", name: "Bayar Hutang / Cicilan", type: "Non-Konsumtif", targetPercent: 0, targetBudget: 0 },
     { code: "5105", name: "Beban Pasangan / Pacar", type: "Konsumtif", targetPercent: 0, targetBudget: 0 },
     { code: "5106", name: "Beban Hiburan & Rekreasi", type: "Konsumtif", targetPercent: 0, targetBudget: 0 },
     { code: "5107", name: "Makan & Minum Harian", type: "Konsumtif", targetPercent: 0, targetBudget: 0 },
@@ -732,7 +732,7 @@ function renderTxFormOptions() {
   let accountOptions = [];
   if (txType === "Pemasukan") {
     labelAccFrom.textContent = state.lang === "ID" ? "Sumber Pendapatan" : "Income Source";
-    accountOptions = ["Gaji", "Side Job", "Utang", "Lainnya"];
+    accountOptions = ["Gaji", "Side Job", "Hutang", "Lainnya"];
   } else if (txType === "Pengeluaran") {
     labelAccFrom.textContent = dict.acc_from;
     accountOptions = [...state.accounts.map(a => a.name), "Paylater"];
@@ -1000,6 +1000,9 @@ function renderInvestSection() {
   }));
 }
 
+let investType = "beli";
+function activeInvestmentLots() { return state.investments.filter(i => i.status === "Aktif"); }
+
 let catManualOverride = false;
 let editingCatCode = null;
 
@@ -1037,8 +1040,8 @@ function renderCategorySection() {
   const otherRows = state.chartOfAccounts.map(c => ({ code: c.code, name: c.name, jenis: c.jenis, konsumtif: null, source: "coa" }));
   const rows = [...bebanRows, ...otherRows].sort((a, b) => a.code.localeCompare(b.code));
 
-  const jenisLabel = { Harta: dict.jenis_harta, Utang: dict.jenis_utang, Modal: dict.jenis_modal, Pendapatan: dict.jenis_pendapatan, Beban: dict.jenis_beban };
-  const jenisTagClass = { Harta: "harta", Utang: "utang", Modal: "modal", Pendapatan: "pendapatan", Beban: "nonkonsumtif" };
+  const jenisLabel = { Harta: dict.jenis_harta, Hutang: dict.jenis_hutang, Modal: dict.jenis_modal, Pendapatan: dict.jenis_pendapatan, Beban: dict.jenis_beban };
+  const jenisTagClass = { Harta: "harta", Hutang: "utang", Modal: "modal", Pendapatan: "pendapatan", Beban: "nonkonsumtif" };
 
   rows.forEach(r => {
     const tr_ = document.createElement("tr");
