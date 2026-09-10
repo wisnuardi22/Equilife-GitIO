@@ -264,6 +264,20 @@
               <label id="labelAccFrom" data-i18n="acc_from">Sumber Rekening</label>
               <select id="txAccFrom"></select>
             </div>
+            <div class="field" id="fieldAccFrom">
+              <label id="labelAccFrom" data-i18n="acc_from">Sumber Rekening</label>
+              <select id="txAccFrom"></select>
+            </div>
+            <!-- TAMBAHAN PILIHAN TENOR KHUSUS PAYLATER -->
+            <div class="field hidden" id="fieldPaylaterTenor">
+              <label>Tenor Paylater (Bulan)</label>
+              <select id="txPaylaterTenor">
+                <option value="1">1 Bulan (Bulanan Sekaligus)</option>
+                <option value="3">3 Bulan</option>
+                <option value="6">6 Bulan</option>
+                <option value="12">12 Bulan</option>
+              </select>
+            </div>
             <div class="field hidden" id="fieldAccTo">
               <label id="labelAccTo" data-i18n="acc_to">Rekening Tujuan</label>
               <select id="txAccTo"></select>
