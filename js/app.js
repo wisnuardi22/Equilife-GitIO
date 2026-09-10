@@ -1,37 +1,47 @@
 /* ==========================================================================
-   Equilife — application logic (Permanent Multi-User & Monthly Budget Filter)
+   Equilife — application logic
+   Static, client-side. Data persists in the browser via localStorage.
    ========================================================================== */
 
+const STORAGE_KEY_LEGACY = "equilife_data_v3"; /* pre-login single-user data, offered for migration on first login */
+
+/* ---------------------------------------------------------------------- */
+/* i18n                                                                   */
+/* ---------------------------------------------------------------------- */
 const T = {
   ID: {
     tagline: "Pencatatan Keuangan Pribadi",
     nav_overview: "Overview", nav_transaksi: "Transaksi", nav_anggaran: "Anggaran", nav_analisis: "Analisis",
     page_sub_overview: "Ringkasan saldo, liability, dan aktivitas keuangan kamu",
     page_sub_transaksi: "Kelola transaksi, utang, investasi, dan kategori",
-    page_sub_anggaran: "Atur target dan pantau realisasi anggaran bulanan",
+    page_sub_anggaran: "Atur target dan pantau realisasi anggaran",
     page_sub_analisis: "Pahami pola pengeluaran dan kesehatan keuangan kamu",
     total_balance: "TOTAL SALDO REKENING",
-    hide_balance: "Sembunyikan", show_balance: "Tampilkan",
+    hide_balance: "Sembunyikan Info", show_balance: "Tampilkan Info",
     add_account: "+ Tambah rekening baru",
     acc_name: "Nama Rekening / Dompet Baru",
     initial_bal: "Saldo Awal (Rp)",
     save: "Simpan", cancel: "Batal", other: "Lainnya",
     income_month: "PEMASUKAN", expense_month: "PENGELUARAN", surplus_month: "SISA / SURPLUS",
+    this_month: "Bulan ini",
     recent_tx: "Transaksi Terakhir", see_all: "Lihat semua →",
     add_tx_title: "Tambah Transaksi", add_tx_desc: "Catat pemasukan, pengeluaran, atau transfer",
     expense: "Pengeluaran", income: "Pemasukan", transfer: "Transfer",
     date: "Tanggal", acc_from: "Sumber Rekening", acc_to: "Rekening Tujuan",
     from_acc: "Dari Rekening", to_acc: "Ke Rekening",
+    income_source: "Sumber Pemasukan",
+    income_src_salary: "Gaji Bulanan", income_src_side: "Side Income", income_src_other: "Penghasilan Lainnya",
+    per_month: "/bln", months_unit: "bln", debt_bunga_persen_short: "bunga",
     category: "Kategori Pos Pengeluaran",
     amount: "Nominal Transaksi (Rp)", notes: "Keterangan",
     tx_history: "Riwayat Transaksi",
     tx_count: (n) => `${n} transaksi`,
     sec_tx: "Transaksi", sec_debt: "Utang & Cicilan", sec_invest: "Investasi", sec_category: "Kelola Kategori",
     setting_title: "Target Anggaran & Perhitungan Otomatis",
-    setting_desc: "Ubah nominal (Rp) atau persentase (%) untuk bulan terpilih.",
+    setting_desc: "Ubah nominal (Rp) atau persentase (%) — kolom satunya akan terhitung otomatis.",
     code: "Kode", target_rp: "Target (Rp)", target_pct: "Target (%)",
-    total_all: "TOTAL KESELURUHAN", save_setting: "Simpan Perubahan Target Bulan Ini",
-    budget_vs_act: "Monitoring Anggaran", budget_vs_act_desc: "Budget vs Realisasi bulan",
+    total_all: "TOTAL KESELURUHAN", save_setting: "Simpan Perubahan Target",
+    budget_vs_act: "Monitoring Anggaran", budget_vs_act_desc: "Budget vs Realisasi (seluruh transaksi)",
     category_col: "Kategori", type_col: "Tipe", target: "Target", actual: "Realisasi", remaining: "Sisa", status: "Status",
     status_ok: "Terpenuhi", status_over: "Melampaui Batas",
     chart_title: "Visualisasi Budget vs Realisasi",
@@ -42,22 +52,28 @@ const T = {
     total_income_lbl: "Total Pemasukan", total_expense_lbl: "Total Pengeluaran", konsumtif_expense_lbl: "Pengeluaran Konsumtif",
     category_detail: "Rincian per Kategori",
     correct_title: "Koreksi Transaksi", save_changes: "Simpan Perubahan",
-    no_tx: "Belum ada transaksi.",
+    no_tx: "Belum ada transaksi. Tambahkan transaksi pertamamu di menu Transaksi.",
     no_data_chart: "Belum ada data untuk ditampilkan.",
-    income_info: (v) => `Total pemasukan bulan ini: <strong>${v}</strong>`,
-    no_income_warn: "Belum ada pemasukan tercatat pada bulan ini.",
+    income_info: (v) => `Total pemasukan tercatat: <strong>${v}</strong>`,
+    no_income_warn: "Belum ada pemasukan tercatat. Tambahkan transaksi pemasukan agar target dapat dihitung otomatis.",
+    salary_info: (v, m) => `Anggaran ini dihitung dari <strong>Gaji Bulanan${m ? " " + m : ""}: ${v}</strong> — Side Income dan Penghasilan Lainnya tidak dihitung sebagai dasar target anggaran.`,
+    no_salary_warn: "Belum ada transaksi Pemasukan dengan sumber \"Gaji Bulanan\". Tambahkan dulu agar target anggaran dapat dihitung otomatis.",
     total_ok: "Total alokasi persentase sudah 100% — sempurna.",
     total_warn: (p) => `Total alokasi persentase saat ini ${p}% — idealnya mencapai 100%.`,
-    reset_data: "Reset data akun",
-    reset_confirm: "Ini akan menghapus seluruh data pada akun ini secara permanen. Lanjutkan?",
+    reset_data: "Reset data contoh",
+    export_lib_missing: "Library export Excel belum termuat. Cek koneksi internet lalu coba lagi.",
+    reset_confirm: "Ini akan menghapus seluruh data dan mengembalikan data kosong. Lanjutkan?",
     delete_confirm: "Hapus transaksi ini? Saldo rekening akan dikembalikan.",
     delete_debt_confirm: "Hapus data utang ini?",
-    delete_cat_confirm: "Hapus kategori ini?",
+    delete_cat_confirm: "Hapus kategori ini? Data realisasi lama tetap tersimpan namun tidak akan tampil di anggaran.",
     saved_ok: "Tersimpan ✓",
     konsumtif: "Konsumtif", nonkonsumtif: "Non-Konsumtif",
+    /* liability */
     liability_title: "Liability (Utang)", liability_desc: "Ringkasan pinjaman dan bunga berjalan",
+    cashflow_title: "ARUS KAS", all_sources: "Semua Sumber",
     liab_total_loan: "Total Pokok Pinjaman Aktif", liab_total_interest: "Total Bunga Berjalan",
     no_debt: "Tidak ada utang aktif pada periode ini.",
+    /* debt form */
     debt_form_title: "Tambah Utang / Pinjaman", debt_form_desc: "Kewajiban, admin, dan bunga terhitung otomatis",
     debt_source: "Utang Dimana", debt_start: "Tanggal Mulai",
     debt_kewajiban: "Kewajiban (Pokok Pinjaman Awal)", debt_admin: "Admin (Biaya Admin)",
@@ -66,6 +82,9 @@ const T = {
     debt_bunga_persen: "Persentase Bunga Total (otomatis)", debt_save: "Simpan Utang",
     debt_list_title: "Daftar Utang", debt_count: (n) => `${n} utang tercatat`,
     debt_aktif: "Aktif", debt_lunas: "Lunas", mark_paid: "Tandai Lunas", mark_active: "Tandai Aktif",
+    tx_debt_link: "Bayar Utang Mana", debt_no_link: "- (Tidak terkait utang tertentu)",
+    debt_remaining_short: "Sisa", debt_progress: (paid, total) => `Terbayar ${paid} dari ${total}`,
+    /* investment */
     invest_form_title: "Investasi", invest_form_desc: "Catat pembelian dan penjualan aset investasi",
     invest_buy: "Beli", invest_sell: "Jual",
     invest_jenis: "Jenis Investasi", invest_kode: "Kode / Nama Investasi",
@@ -76,65 +95,77 @@ const T = {
     invest_list_title: "Posisi Investasi", invest_active: "Investasi Aktif", invest_none_active: "Tidak ada posisi aktif untuk dijual.",
     no_invest: "Belum ada data investasi.",
     invest_summary: (n, v) => `${n} posisi aktif · total modal ${v}`,
-    cat_title: "Kelola Kategori / Akun", cat_desc: "Ketik nama akun — sistem menyarankan jenis dan kode otomatis.",
+    /* category manager */
+    cat_title: "Kelola Kategori / Akun", cat_desc: "Ketik nama akun — sistem menyarankan jenis dan kode otomatis (Harta/Utang/Modal/Pendapatan/Beban). Kategori berjenis Beban langsung tersedia di menu Anggaran.",
     cat_name: "Nama Akun / Kategori", cat_jenis: "Jenis (saran otomatis)", cat_code: "Kode (saran otomatis)",
     cat_konsumtif_type: "Tipe (khusus Beban)", cat_add: "Tambah Kategori", cat_update: "Simpan Perubahan",
     cat_list_title: "Daftar Kategori / Akun",
     jenis_harta: "Harta", jenis_utang: "Utang", jenis_modal: "Modal", jenis_pendapatan: "Pendapatan", jenis_beban: "Beban",
     edit: "Edit", delete: "Hapus",
     cat_name_required: "Nama kategori tidak boleh kosong.",
-    cat_code_exists: "Kode ini sudah dipakai kategori lain.",
+    cat_code_exists: "Kode ini sudah dipakai kategori lain, silakan ubah kodenya.",
+    /* analysis extra indicators */
     extra_indicators_title: "Indikator Kesehatan Keuangan",
-    extra_indicators_desc: "Kemampuan bayar utang dan alokasi investasi",
+    extra_indicators_desc: "Kemampuan bayar utang dan alokasi investasi (acuan umum, bukan saran keuangan personal)",
     dsr_title: "Rasio Cicilan terhadap Pemasukan (DSR)",
-    dsr_note: "Total tagihan bulanan utang aktif dibagi rata-rata pemasukan bulanan.",
+    dsr_note: "Total tagihan bulanan utang aktif dibagi rata-rata pemasukan bulanan. Acuan umum: <30% sehat, 30–50% waspada, >50% berisiko.",
     dsr_sehat: "Sehat", dsr_waspada: "Waspada", dsr_berisiko: "Berisiko",
     invest_realized_title: "Laba/Rugi Investasi Terealisasi",
-    invest_realized_note: "Total selisih nominal diterima dan modal.",
+    invest_realized_note: "Total selisih nominal diterima dan modal dari seluruh posisi yang sudah dijual.",
     invest_ratio_title: "Porsi Investasi dari Total Aset",
-    invest_ratio_note: "Total modal investasi aktif dibanding total aset.",
+    invest_ratio_note: "Total modal investasi aktif dibanding total aset (saldo rekening + investasi aktif). Acuan umum, bukan target baku.",
     invest_low: "Rendah", invest_moderate: "Moderat", invest_aggressive: "Agresif",
-    pay_method: "Metode Pembayaran",
-    pay_method_acc: "Rekening / Dompet",
-    pay_method_paylater: "Paylater (Hubungkan ke Utang)",
-    tx_debt_link: "Pilih Akun Utang / Paylater",
+    nav_section_menu: "MENU", logout: "Keluar", export_excel: "⬇ Export Excel", export_json: "⬇ Export JSON",
     auth_login_tab: "Masuk", auth_register_tab: "Daftar",
     auth_email: "Email", auth_password: "Kata Sandi", auth_login_btn: "Masuk",
     auth_fullname: "Nama Lengkap", auth_birthdate: "Tanggal Lahir", auth_birthplace: "Kota Kelahiran",
     auth_password_hint: "Minimal 6 karakter", auth_register_btn: "Daftar",
-    auth_verify_code: "Kode Verifikasi (6 digit)", auth_verify_btn: "Verifikasi & Masuk",
-    auth_resend: "Kirim ulang kode", auth_disclaimer: "Data disimpan aman secara permanen per akun.",
-    logout: "Keluar", export_excel: "⬇ Export Excel", export_json: "⬇ Export JSON"
+    auth_verify_code: "Kode Verifikasi (6 digit)", auth_verify_btn: "Verifikasi & Masuk", auth_resend: "Kirim ulang kode",
+    auth_disclaimer: "Situs ini statis (GitHub Pages) — akun dan data disimpan di localStorage browser ini, bukan di server. Jangan gunakan kata sandi yang juga kamu pakai di layanan lain.",
+    auth_verify_desc: (email) => `Kami mengirim kode 6 digit ke <strong>${email}</strong>. Masukkan kodenya untuk menyelesaikan verifikasi.`,
+    auth_dev_preview: (code) => `Mode pratinjau (belum ada layanan email terhubung): kode verifikasi kamu adalah ${code}`,
+    auth_email_failed: (code) => `Pengiriman email gagal. Kode verifikasi kamu: ${code}`,
+    auth_err_not_found: "Email belum terdaftar. Silakan daftar dulu.",
+    auth_err_wrong_password: "Kata sandi salah.",
+    auth_err_email_taken: "Email ini sudah terdaftar. Silakan masuk.",
+    auth_err_password_short: "Kata sandi minimal 6 karakter.",
+    auth_err_code_expired: "Kode verifikasi sudah kedaluwarsa. Klik \"Kirim ulang kode\".",
+    auth_err_code_wrong: "Kode verifikasi salah.",
+    auth_err_generic: "Terjadi kesalahan. Silakan coba lagi.",
   },
   EN: {
     tagline: "Personal Financial Records",
     nav_overview: "Overview", nav_transaksi: "Transactions", nav_anggaran: "Budget", nav_analisis: "Analysis",
     page_sub_overview: "A summary of balances, liabilities, and recent activity",
     page_sub_transaksi: "Manage transactions, debt, investments, and categories",
-    page_sub_anggaran: "Set targets and monitor monthly budget realization",
+    page_sub_anggaran: "Set targets and monitor budget realization",
     page_sub_analisis: "Understand your spending pattern and financial health",
     total_balance: "TOTAL ACCOUNT BALANCE",
-    hide_balance: "Hide", show_balance: "Show",
+    hide_balance: "Hide Info", show_balance: "Show Info",
     add_account: "+ Add new account",
     acc_name: "New Account / Wallet Name",
     initial_bal: "Initial Balance (Rp)",
     save: "Save", cancel: "Cancel", other: "Other",
     income_month: "INCOME", expense_month: "EXPENSE", surplus_month: "REMAINING / SURPLUS",
+    this_month: "This month",
     recent_tx: "Recent Transactions", see_all: "See all →",
     add_tx_title: "Add Transaction", add_tx_desc: "Record income, expense, or a transfer",
     expense: "Expense", income: "Income", transfer: "Transfer",
     date: "Date", acc_from: "Source Account", acc_to: "Destination Account",
     from_acc: "From Account", to_acc: "To Account",
+    income_source: "Income Source",
+    income_src_salary: "Monthly Salary", income_src_side: "Side Income", income_src_other: "Other Income",
+    per_month: "/mo", months_unit: "mo", debt_bunga_persen_short: "interest",
     category: "Expense Category",
     amount: "Transaction Amount (Rp)", notes: "Notes",
     tx_history: "Transaction History",
     tx_count: (n) => `${n} transactions`,
     sec_tx: "Transactions", sec_debt: "Debt & Loans", sec_invest: "Investments", sec_category: "Manage Categories",
     setting_title: "Budget Target & Live Calculation",
-    setting_desc: "Change the amount (Rp) or percentage (%) for selected month.",
+    setting_desc: "Change the amount (Rp) or percentage (%) — the other field updates automatically.",
     code: "Code", target_rp: "Target (Rp)", target_pct: "Target (%)",
-    total_all: "OVERALL TOTAL", save_setting: "Save Monthly Target Changes",
-    budget_vs_act: "Budget Monitoring", budget_vs_act_desc: "Budget vs actual for month",
+    total_all: "OVERALL TOTAL", save_setting: "Save Target Changes",
+    budget_vs_act: "Budget Monitoring", budget_vs_act_desc: "Budget vs actual (all transactions)",
     category_col: "Category", type_col: "Type", target: "Target", actual: "Actual", remaining: "Remaining", status: "Status",
     status_ok: "On Track", status_over: "Exceeded",
     chart_title: "Budget vs Actual Visualization",
@@ -145,20 +176,24 @@ const T = {
     total_income_lbl: "Total Income", total_expense_lbl: "Total Expense", konsumtif_expense_lbl: "Lifestyle Spending",
     category_detail: "Category Breakdown",
     correct_title: "Correct Transaction", save_changes: "Save Changes",
-    no_tx: "No transactions yet.",
+    no_tx: "No transactions yet. Add your first one in the Transactions menu.",
     no_data_chart: "Nothing to display yet.",
-    income_info: (v) => `Total recorded income this month: <strong>${v}</strong>`,
-    no_income_warn: "No income recorded for this month.",
+    income_info: (v) => `Total recorded income: <strong>${v}</strong>`,
+    no_income_warn: "No income recorded yet. Add an income transaction so targets can be calculated automatically.",
+    salary_info: (v, m) => `This budget is calculated from <strong>Monthly Salary${m ? " " + m : ""}: ${v}</strong> — Side Income and Other Income are not counted toward the budget target basis.`,
+    no_salary_warn: "No income transaction with source \"Monthly Salary\" yet. Add one so budget targets can be calculated automatically.",
     total_ok: "Total allocation is 100% — perfect.",
     total_warn: (p) => `Current allocation total is ${p}% — ideally it should reach 100%.`,
-    reset_data: "Reset account data",
-    reset_confirm: "This will erase all data on this account permanently. Continue?",
+    reset_data: "Reset sample data",
+    export_lib_missing: "The Excel export library hasn't loaded. Check your internet connection and try again.",
+    reset_confirm: "This will erase all data and restore the sample data. Continue?",
     delete_confirm: "Delete this transaction? The account balance will be restored.",
     delete_debt_confirm: "Delete this debt record?",
-    delete_cat_confirm: "Delete this category?",
+    delete_cat_confirm: "Delete this category? Past realized data stays but won't show in the budget anymore.",
     saved_ok: "Saved ✓",
     konsumtif: "Lifestyle", nonkonsumtif: "Essential",
     liability_title: "Liability (Debt)", liability_desc: "A summary of running loans and interest",
+    cashflow_title: "CASH FLOW", all_sources: "All Sources",
     liab_total_loan: "Total Active Loan Principal", liab_total_interest: "Total Running Interest",
     no_debt: "No active debt in this period.",
     debt_form_title: "Add Debt / Loan", debt_form_desc: "Obligation, admin fee, and interest calculated automatically",
@@ -169,6 +204,8 @@ const T = {
     debt_bunga_persen: "Total Interest Percentage (auto)", debt_save: "Save Debt",
     debt_list_title: "Debt List", debt_count: (n) => `${n} debts recorded`,
     debt_aktif: "Active", debt_lunas: "Paid Off", mark_paid: "Mark Paid Off", mark_active: "Mark Active",
+    tx_debt_link: "Paying Off Which Debt", debt_no_link: "- (Not linked to a specific debt)",
+    debt_remaining_short: "Remaining", debt_progress: (paid, total) => `Paid ${paid} of ${total}`,
     invest_form_title: "Investments", invest_form_desc: "Record purchases and sales of investment assets",
     invest_buy: "Buy", invest_sell: "Sell",
     invest_jenis: "Investment Type", invest_kode: "Code / Name",
@@ -179,38 +216,47 @@ const T = {
     invest_list_title: "Investment Positions", invest_active: "Active Investments", invest_none_active: "No active position to sell.",
     no_invest: "No investment data yet.",
     invest_summary: (n, v) => `${n} active positions · total cost ${v}`,
-    cat_title: "Manage Categories / Accounts", cat_desc: "Type an account name — the system suggests a type and code automatically.",
+    cat_title: "Manage Categories / Accounts", cat_desc: "Type an account name — the system suggests a type and code automatically (Asset/Liability/Equity/Income/Expense). Expense-type entries are immediately available in the Budget menu.",
     cat_name: "Account / Category Name", cat_jenis: "Type (auto-suggested)", cat_code: "Code (auto-suggested)",
     cat_konsumtif_type: "Type (Expense only)", cat_add: "Add Category", cat_update: "Save Changes",
     cat_list_title: "Category / Account List",
     jenis_harta: "Asset", jenis_utang: "Liability", jenis_modal: "Equity", jenis_pendapatan: "Income", jenis_beban: "Expense",
     edit: "Edit", delete: "Delete",
     cat_name_required: "Category name cannot be empty.",
-    cat_code_exists: "This code is already used by another category.",
+    cat_code_exists: "This code is already used by another category, please change it.",
     extra_indicators_title: "Financial Health Indicators",
-    extra_indicators_desc: "Debt repayment capacity and investment allocation",
+    extra_indicators_desc: "Debt repayment capacity and investment allocation (general reference, not personal financial advice)",
     dsr_title: "Debt Service Ratio (DSR)",
-    dsr_note: "Total monthly installments divided by average monthly income.",
+    dsr_note: "Total monthly installments of active debt divided by average monthly income. General reference: <30% healthy, 30–50% caution, >50% risky.",
     dsr_sehat: "Healthy", dsr_waspada: "Caution", dsr_berisiko: "Risky",
     invest_realized_title: "Realized Investment Profit/Loss",
-    invest_realized_note: "Total difference between amount received and cost.",
+    invest_realized_note: "Total difference between amount received and cost across all sold positions.",
     invest_ratio_title: "Investment Share of Total Assets",
-    invest_ratio_note: "Total active investment cost compared to total assets.",
+    invest_ratio_note: "Total active investment cost compared to total assets (account balances + active investments). General reference, not a strict target.",
     invest_low: "Low", invest_moderate: "Moderate", invest_aggressive: "Aggressive",
-    pay_method: "Payment Method",
-    pay_method_acc: "Account / Wallet",
-    pay_method_paylater: "Paylater (Link to Debt)",
-    tx_debt_link: "Select Debt / Paylater Account",
-    auth_login_tab: "Login", auth_register_tab: "Register",
-    auth_email: "Email", auth_password: "Password", auth_login_btn: "Login",
-    auth_fullname: "Full Name", auth_birthdate: "Birth Date", auth_birthplace: "Birth Place",
-    auth_password_hint: "At least 6 characters", auth_register_btn: "Register",
-    auth_verify_code: "Verification Code (6 digits)", auth_verify_btn: "Verify & Login",
-    auth_resend: "Resend code", auth_disclaimer: "Data is permanently stored per user account.",
-    logout: "Logout", export_excel: "⬇ Export Excel", export_json: "⬇ Export JSON"
+    nav_section_menu: "MENU", logout: "Log Out", export_excel: "⬇ Export Excel", export_json: "⬇ Export JSON",
+    auth_login_tab: "Log In", auth_register_tab: "Sign Up",
+    auth_email: "Email", auth_password: "Password", auth_login_btn: "Log In",
+    auth_fullname: "Full Name", auth_birthdate: "Date of Birth", auth_birthplace: "City of Birth",
+    auth_password_hint: "At least 6 characters", auth_register_btn: "Sign Up",
+    auth_verify_code: "Verification Code (6 digits)", auth_verify_btn: "Verify & Log In", auth_resend: "Resend code",
+    auth_disclaimer: "This is a static site (GitHub Pages) — accounts and data are stored in this browser's localStorage, not on a server. Don't reuse a password from another service.",
+    auth_verify_desc: (email) => `We sent a 6-digit code to <strong>${email}</strong>. Enter it to finish verifying.`,
+    auth_dev_preview: (code) => `Preview mode (no email service connected yet): your verification code is ${code}`,
+    auth_email_failed: (code) => `Email sending failed. Your verification code: ${code}`,
+    auth_err_not_found: "Email not registered yet. Please sign up first.",
+    auth_err_wrong_password: "Incorrect password.",
+    auth_err_email_taken: "This email is already registered. Please log in.",
+    auth_err_password_short: "Password must be at least 6 characters.",
+    auth_err_code_expired: "Verification code expired. Click \"Resend code\".",
+    auth_err_code_wrong: "Incorrect verification code.",
+    auth_err_generic: "Something went wrong. Please try again.",
   }
 };
 
+/* ---------------------------------------------------------------------- */
+/* Chart-of-accounts auto-suggestion rules                                */
+/* ---------------------------------------------------------------------- */
 const COA_RULES = [
   { jenis: "Utang", prefix: "2", keywords: ["utang", "hutang", "pinjam", "kredit", "cicilan", "paylater", "pay later", "spinjam", "kta", "kartu kredit", "kpr", "debt", "loan"] },
   { jenis: "Modal", prefix: "3", keywords: ["modal", "ekuitas", "equity", "saldo awal"] },
@@ -224,15 +270,13 @@ function suggestJenis(name) {
 }
 const JENIS_PREFIX = { Harta: "1", Utang: "2", Modal: "3", Pendapatan: "4", Beban: "5" };
 
+/* ---------------------------------------------------------------------- */
+/* State + storage                                                        */
+/* ---------------------------------------------------------------------- */
 let state = null;
 let draftBudget = null;
 let currentView = "overview";
 let currentTxSection = "tx";
-
-function getActiveStorageKey() {
-  const loggedEmail = localStorage.getItem("equilife_logged_in_email") || "default_user";
-  return `equilife_perm_data_${loggedEmail}`;
-}
 
 function buildSeedState() {
   const accounts = [
@@ -243,27 +287,25 @@ function buildSeedState() {
     { id: "ACC-05", name: "Bank Jago", initial: 0, balance: 0 },
   ];
 
-  const defaultCategories = [
-    { code: "5101", name: "Zakat & Sedekah", type: "Non-Konsumtif" },
-    { code: "5102", name: "Transfer Orang Tua", type: "Non-Konsumtif" },
-    { code: "5103", name: "Sewa Kost", type: "Non-Konsumtif" },
-    { code: "5104", name: "Bayar Utang / Cicilan", type: "Non-Konsumtif" },
-    { code: "5105", name: "Beban Pasangan / Pacar", type: "Konsumtif" },
-    { code: "5106", name: "Beban Hiburan & Rekreasi", type: "Konsumtif" },
-    { code: "5107", name: "Makan & Minum Harian", type: "Konsumtif" },
-    { code: "5108", name: "Utilitas (Listrik/Internet)", type: "Non-Konsumtif" },
-    { code: "5109", name: "Transportasi & Bensin", type: "Non-Konsumtif" },
-    { code: "1201", name: "Tabungan / Investasi", type: "Non-Konsumtif" },
+  const budget = [
+    { code: "5101", name: "Zakat & Sedekah", type: "Non-Konsumtif", targetPercent: 0, targetBudget: 0 },
+    { code: "5102", name: "Transfer Orang Tua", type: "Non-Konsumtif", targetPercent: 0, targetBudget: 0 },
+    { code: "5103", name: "Sewa Kost", type: "Non-Konsumtif", targetPercent: 0, targetBudget: 0 },
+    { code: "5104", name: "Bayar Utang / Cicilan", type: "Non-Konsumtif", targetPercent: 0, targetBudget: 0 },
+    { code: "5105", name: "Beban Pasangan / Pacar", type: "Konsumtif", targetPercent: 0, targetBudget: 0 },
+    { code: "5106", name: "Beban Hiburan & Rekreasi", type: "Konsumtif", targetPercent: 0, targetBudget: 0 },
+    { code: "5107", name: "Makan & Minum Harian", type: "Konsumtif", targetPercent: 0, targetBudget: 0 },
+    { code: "5108", name: "Utilitas (Listrik/Internet)", type: "Non-Konsumtif", targetPercent: 0, targetBudget: 0 },
+    { code: "5109", name: "Transportasi & Bensin", type: "Non-Konsumtif", targetPercent: 0, targetBudget: 0 },
+    { code: "1201", name: "Tabungan / Investasi", type: "Non-Konsumtif", targetPercent: 0, targetBudget: 0 },
   ];
 
-  return {
+  const s = {
     lang: "ID",
     showBalance: true,
     sidebarCollapsed: false,
-    currentUser: localStorage.getItem("equilife_logged_in_user") || "Pengguna",
-    accounts, 
-    categories: defaultCategories,
-    monthlyBudgets: {}, // Format: { "YYYY-MM": [ {code, targetPercent, targetBudget} ] }
+    accounts,
+    budget,
     transactions: [],
     debts: [],
     investments: [],
@@ -273,6 +315,14 @@ function buildSeedState() {
     debtCounter: 0,
     investCounter: 0,
   };
+
+  return s;
+}
+
+function calcDebtInterest(kewajiban, tagihanPerBulan, jangkaWaktu) {
+  const totalBunga = (tagihanPerBulan * jangkaWaktu) - kewajiban;
+  const persenBunga = kewajiban > 0 ? (totalBunga / kewajiban) * 100 : 0;
+  return { totalBunga, persenBunga };
 }
 
 function migrateState(s) {
@@ -280,55 +330,43 @@ function migrateState(s) {
   if (!s.debts) s.debts = [];
   if (!s.investments) s.investments = [];
   if (!s.chartOfAccounts) s.chartOfAccounts = [];
-  if (!s.monthlyBudgets) s.monthlyBudgets = {};
-  if (!s.categories && s.budget) s.categories = s.budget;
-  if (!s.categories) s.categories = [];
-  
-  if (s.transactions) {
-    s.transactions.forEach(t => {
-      if (!t.payMethod) t.payMethod = "account";
-      if (!t.debtId) t.debtId = null;
-    });
-  }
+  if (s.debtCounter === undefined) s.debtCounter = s.debts.length;
+  if (s.investCounter === undefined) s.investCounter = s.investments.length;
   return s;
 }
 
+/* Data is namespaced per logged-in user id, so each account's financial
+   data lives under its own localStorage key and is invisible to anyone
+   who logs in as a different user on the same browser. */
+function dataKeyForUser(userId) { return `equilife_data_v3__${userId}`; }
+
 function loadState() {
-  const storageKey = getActiveStorageKey();
   try {
-    const raw = localStorage.getItem(storageKey) || localStorage.getItem("equilife_data_v3");
-    if (raw) {
-      const parsed = migrateState(JSON.parse(raw));
-      return parsed;
-    }
-  } catch (e) { /* ignore */ }
+    const raw = localStorage.getItem(dataKeyForUser(currentUser.id));
+    if (raw) return migrateState(JSON.parse(raw));
+  } catch (e) { /* ignore corrupt storage */ }
   const seeded = buildSeedState();
   persist(seeded);
   return seeded;
 }
 
 function persist(s) {
-  try { localStorage.setItem(getActiveStorageKey(), JSON.stringify(s)); } catch (e) { /* ignore */ }
+  if (!currentUser) return;
+  try { localStorage.setItem(dataKeyForUser(currentUser.id), JSON.stringify(s)); } catch (e) { /* storage unavailable */ }
 }
 function saveState() { persist(state); }
 
+/* ---------------------------------------------------------------------- */
+/* Balance logic                                                          */
+/* ---------------------------------------------------------------------- */
 function findAccount(s, name) { return s.accounts.find(a => a.name === name); }
 
 function applyTxEffect(s, tx, sign) {
   const amt = tx.amount * sign;
   if (tx.type === "Pengeluaran") {
-    if (tx.payMethod === "paylater" && tx.debtId) {
-      const debt = s.debts.find(d => d.id === tx.debtId);
-      if (debt) {
-        debt.kewajiban += amt;
-      }
-    } else {
-      const a = findAccount(s, tx.accountFrom); 
-      if (a) a.balance -= amt;
-    }
+    const a = findAccount(s, tx.accountFrom); if (a) a.balance -= amt;
   } else if (tx.type === "Pemasukan") {
-    const a = findAccount(s, tx.accountTo); 
-    if (a) a.balance += amt;
+    const a = findAccount(s, tx.accountTo); if (a) a.balance += amt;
   } else {
     const f = findAccount(s, tx.accountFrom); if (f) f.balance -= amt;
     const t = findAccount(s, tx.accountTo); if (t) t.balance += amt;
@@ -363,7 +401,11 @@ function addAccount(name, initialBalance) {
   saveState();
 }
 
-function tr() { return T[state.lang]; }
+/* ---------------------------------------------------------------------- */
+/* Utilities                                                              */
+/* ---------------------------------------------------------------------- */
+let uiLang = "ID"; /* language selector must work before login, when `state` doesn't exist yet */
+function tr() { return T[state && state.lang ? state.lang : uiLang]; }
 
 function fmtRp(n) {
   const v = Math.round(n || 0);
@@ -391,6 +433,14 @@ function addMonthsToISO(iso, months) {
   const d = parseISO(iso);
   d.setMonth(d.getMonth() + months);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+const MONTH_NAMES_ID = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+const MONTH_NAMES_EN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+function monthLabelFromKey(key) {
+  if (!key) return "";
+  const [y, m] = key.split("-");
+  const names = state.lang === "ID" ? MONTH_NAMES_ID : MONTH_NAMES_EN;
+  return `${names[Number(m) - 1]} ${y}`;
 }
 function flash(btn, text) {
   const original = btn.textContent;
@@ -434,15 +484,17 @@ function setRupiahValue(el, n) {
   el.value = n ? Number(Math.round(n)).toLocaleString("id-ID") : "0";
 }
 
+/* ---------------------------------------------------------------------- */
+/* i18n application                                                       */
+/* ---------------------------------------------------------------------- */
 function applyI18n() {
   const dict = tr();
   document.querySelectorAll("[data-i18n]").forEach(el => {
     const key = el.getAttribute("data-i18n");
     if (dict[key] !== undefined && typeof dict[key] === "string") el.textContent = dict[key];
   });
-  document.getElementById("langToggle").textContent = state.lang === "ID" ? "ID / EN" : "EN / ID";
-  updateBalanceToggleLabel();
-  updatePageHeader();
+  document.getElementById("langToggle").textContent = uiLang === "ID" ? "ID / EN" : "EN / ID";
+  if (state) { updateBalanceToggleLabel(); updatePageHeader(); }
 }
 function updateBalanceToggleLabel() {
   const dict = tr();
@@ -456,6 +508,9 @@ function updatePageHeader() {
   document.getElementById("pageSubtitle").textContent = subs[currentView];
 }
 
+/* ---------------------------------------------------------------------- */
+/* Navigation                                                             */
+/* ---------------------------------------------------------------------- */
 function setView(name) {
   currentView = name;
   document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
@@ -472,12 +527,15 @@ function setTxSection(name) {
   document.querySelectorAll(".tx-section").forEach(s => s.classList.remove("active"));
   document.getElementById(`txSection-${name}`).classList.add("active");
   document.querySelectorAll("#txSectionGroup .pill").forEach(p => p.classList.toggle("active", p.dataset.section === name));
+  if (name === "tx") renderTxFormOptions();
   if (name === "debt") renderDebtSection();
   if (name === "invest") renderInvestSection();
   if (name === "category") renderCategorySection();
 }
 
-/* OVERVIEW & TRANSACTIONS */
+/* ---------------------------------------------------------------------- */
+/* OVERVIEW                                                               */
+/* ---------------------------------------------------------------------- */
 function activeInvestmentsByKode() {
   const map = {};
   state.investments.filter(i => i.status === "Aktif").forEach(i => {
@@ -489,30 +547,10 @@ function activeInvestmentsByKode() {
   return Object.values(map);
 }
 
-function populateOverviewFilters() {
-  const mSel = document.getElementById("ovMonth");
-  const ySel = document.getElementById("ovYear");
-  if (!mSel.dataset.bound) {
-    const monthNamesID = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-    const monthNamesEN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-    const names = state.lang === "ID" ? monthNamesID : monthNamesEN;
-    const now = new Date();
-    mSel.innerHTML = names.map((n, i) => `<option value="${i + 1}">${n}</option>`).join("");
-    mSel.value = now.getMonth() + 1;
-    const years = new Set([now.getFullYear()]);
-    state.transactions.forEach(t => years.add(parseISO(t.date).getFullYear()));
-    ySel.innerHTML = [...years].sort((a, b) => a - b).map(y => `<option value="${y}">${y}</option>`).join("");
-    ySel.value = now.getFullYear();
-    mSel.dataset.bound = "1";
-    mSel.addEventListener("change", renderOverview);
-    ySel.addEventListener("change", renderOverview);
-  }
-}
+function maskVal(text) { return state.showBalance ? text : "••••••"; }
 
 function renderOverview() {
   const dict = tr();
-  populateOverviewFilters();
-  
   const total = state.accounts.reduce((s, a) => s + a.balance, 0);
   document.getElementById("totalBalanceFigure").textContent = state.showBalance ? fmtRp(total) : "Rp ••••••••";
 
@@ -540,20 +578,26 @@ function renderOverview() {
     grid.appendChild(card);
   });
   document.getElementById("investSummaryLine").textContent =
-    invGroups.length ? dict.invest_summary(invGroups.length, fmtRp(investTotal)) : "";
+    invGroups.length ? (state.showBalance ? dict.invest_summary(invGroups.length, fmtRp(investTotal)) : dict.invest_summary(invGroups.length, "Rp ••••••")) : "";
 
-  const selMonth = Number(document.getElementById("ovMonth").value) || (new Date().getMonth() + 1);
-  const selYear = Number(document.getElementById("ovYear").value) || new Date().getFullYear();
-
+  /* cashflow month/year filter */
+  const ovMonthSel = document.getElementById("ovMonth");
+  const ovYearSel = document.getElementById("ovYear");
+  if (!ovMonthSel.dataset.bound) {
+    populateMonthYearSelect(ovMonthSel, ovYearSel);
+    ovMonthSel.dataset.bound = "1";
+  }
+  const ovMonth = Number(ovMonthSel.value) || (new Date().getMonth() + 1);
+  const ovYear = Number(ovYearSel.value) || new Date().getFullYear();
   const periodTx = state.transactions.filter(t => {
     const d = parseISO(t.date);
-    return d.getFullYear() === selYear && (d.getMonth() + 1) === selMonth;
+    return d.getFullYear() === ovYear && d.getMonth() + 1 === ovMonth;
   });
   const income = periodTx.filter(t => t.type === "Pemasukan").reduce((s, t) => s + t.amount, 0);
   const expense = periodTx.filter(t => t.type === "Pengeluaran").reduce((s, t) => s + t.amount, 0);
-  document.getElementById("sumIncome").textContent = fmtRp(income);
-  document.getElementById("sumExpense").textContent = fmtRp(expense);
-  document.getElementById("sumSurplus").textContent = fmtRp(income - expense);
+  document.getElementById("sumIncome").textContent = state.showBalance ? fmtRp(income) : "Rp ••••••";
+  document.getElementById("sumExpense").textContent = state.showBalance ? fmtRp(expense) : "Rp ••••••";
+  document.getElementById("sumSurplus").textContent = state.showBalance ? fmtRp(income - expense) : "Rp ••••••";
 
   renderLiabilityPanel();
 
@@ -564,78 +608,96 @@ function renderOverview() {
     list.innerHTML = `<p class="muted small">${dict.no_tx}</p>`;
   } else {
     recent.forEach(tx => list.appendChild(renderTxRow(tx, false)));
+    if (!state.showBalance) list.querySelectorAll(".tx-amount").forEach(el => { el.textContent = "••••••"; });
   }
 }
 
 function debtStatus(debt) {
   if (debt.manualStatus) return debt.manualStatus;
+  const totalToRepay = totalToRepayForDebt(debt);
+  const paid = totalPaidForDebt(debt.id);
+  if (totalToRepay > 0 && paid >= totalToRepay) return "Lunas";
   const end = addMonthsToISO(debt.startDate, debt.jangkaWaktu);
   return todayISO() <= end ? "Aktif" : "Lunas";
 }
 
+const DEBT_CATEGORY_CODE = "5104"; /* "Bayar Utang / Cicilan" — the expense category that can be linked to a specific debt */
+function totalToRepayForDebt(debt) { return debt.tagihanPerBulan * debt.jangkaWaktu; }
+function totalPaidForDebt(debtId) {
+  return state.transactions
+    .filter(t => t.type === "Pengeluaran" && t.debtId === debtId)
+    .reduce((s, t) => s + t.amount, 0);
+}
+
 function populateMonthYearSelect(monthSel, yearSel) {
-  const monthNamesID = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-  const monthNamesEN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-  const names = state.lang === "ID" ? monthNamesID : monthNamesEN;
+  const names = state.lang === "ID" ? MONTH_NAMES_ID : MONTH_NAMES_EN;
   const now = new Date();
   const prevMonth = monthSel.value ? Number(monthSel.value) : now.getMonth() + 1;
   const prevYear = yearSel.value ? Number(yearSel.value) : now.getFullYear();
   monthSel.innerHTML = names.map((n, i) => `<option value="${i + 1}">${n}</option>`).join("");
   monthSel.value = prevMonth;
-  const years = new Set([now.getFullYear()]);
+
+  /* broad, generous year range: several years back/forward from today, plus
+     any actual data years so old records are always reachable */
+  const years = new Set();
+  for (let y = now.getFullYear() - 6; y <= now.getFullYear() + 2; y++) years.add(y);
   state.debts.forEach(d => years.add(parseISO(d.startDate).getFullYear()));
+  state.transactions.forEach(t => years.add(parseISO(t.date).getFullYear()));
   const yearList = [...years].sort((a, b) => a - b);
   yearSel.innerHTML = yearList.map(y => `<option value="${y}">${y}</option>`).join("");
   yearSel.value = prevYear;
 }
 
+function populateLiabSourceSelect(sel) {
+  const dict = tr();
+  const prev = sel.value;
+  const sources = [...new Set(state.debts.map(d => d.source))].sort();
+  sel.innerHTML = `<option value="__all">${dict.all_sources}</option>` + sources.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
+  sel.value = sources.includes(prev) ? prev : "__all";
+}
+
 function renderLiabilityPanel() {
   const dict = tr();
-  const sourceSel = document.getElementById("liabSource");
   const monthSel = document.getElementById("liabMonth");
   const yearSel = document.getElementById("liabYear");
-
+  const sourceSel = document.getElementById("liabSource");
   if (!monthSel.dataset.bound) {
     populateMonthYearSelect(monthSel, yearSel);
+    populateLiabSourceSelect(sourceSel);
     monthSel.dataset.bound = "1";
+  } else if (!monthSel.value) {
+    populateMonthYearSelect(monthSel, yearSel);
   }
-
-  const sources = ["Semua", ...new Set(state.debts.map(d => d.source))];
-  const curSource = sourceSel.value || "Semua";
-  sourceSel.innerHTML = sources.map(s => `<option value="${s}">${s === "Semua" ? (state.lang === 'ID' ? 'Semua Sumber' : 'All Sources') : s}</option>`).join("");
-  sourceSel.value = curSource;
-
-  if (!sourceSel.dataset.bound) {
-    sourceSel.addEventListener("change", renderLiabilityPanel);
-    monthSel.addEventListener("change", renderLiabilityPanel);
-    yearSel.addEventListener("change", renderLiabilityPanel);
-    sourceSel.dataset.bound = "1";
-  }
-
+  populateLiabSourceSelect(sourceSel); /* refresh options in case sources changed, keeps selection if still valid */
   const month = Number(monthSel.value) || (new Date().getMonth() + 1);
   const year = Number(yearSel.value) || new Date().getFullYear();
   const periodStart = `${year}-${String(month).padStart(2, "0")}-01`;
+  const sourceFilter = sourceSel.value || "__all";
 
-  let debtsInPeriod = state.debts.filter(d => {
+  const periodEndExclusive = addMonthsToISO(periodStart, 1); /* first day of the following month */
+  const debtsInPeriod = state.debts.filter(d => {
     const end = addMonthsToISO(d.startDate, d.jangkaWaktu);
-    return d.startDate <= periodStart && periodStart <= end;
+    /* overlap check: the loan's active range [startDate, end] intersects
+       the selected month's range [periodStart, periodEndExclusive) —
+       previously this required startDate to fall on/before the 1st of the
+       month, which wrongly hid loans that started mid-month from their
+       own starting month. */
+    const inPeriod = d.startDate < periodEndExclusive && periodStart <= end;
+    const sourceMatch = sourceFilter === "__all" || d.source === sourceFilter;
+    return inPeriod && sourceMatch;
   });
-
-  if (sourceSel.value && sourceSel.value !== "Semua") {
-    debtsInPeriod = debtsInPeriod.filter(d => d.source === sourceSel.value);
-  }
 
   const totalLoan = debtsInPeriod.reduce((s, d) => s + d.kewajiban, 0);
   const totalInterest = debtsInPeriod.reduce((s, d) => s + d.totalBunga, 0);
 
   document.getElementById("liabSummaryGrid").innerHTML = `
     <div class="summary-card">
-      <div class="eyebrow">${dict.liab_total_loan}</div>
-      <div class="summary-value negative">${fmtRp(totalLoan)}</div>
+      <div class="eyebrow">${dict.liab_total_loan}${sourceFilter !== "__all" ? ` · ${escapeHtml(sourceFilter)}` : ""}</div>
+      <div class="summary-value negative">${state.showBalance ? fmtRp(totalLoan) : "Rp ••••••"}</div>
     </div>
     <div class="summary-card">
-      <div class="eyebrow">${dict.liab_total_interest}</div>
-      <div class="summary-value" style="color:var(--warning)">${fmtRp(totalInterest)}</div>
+      <div class="eyebrow">${dict.liab_total_interest}${sourceFilter !== "__all" ? ` · ${escapeHtml(sourceFilter)}` : ""}</div>
+      <div class="summary-value" style="color:var(--warning)">${state.showBalance ? fmtRp(totalInterest) : "Rp ••••••"}</div>
     </div>`;
 
   const list = document.getElementById("liabList");
@@ -645,6 +707,7 @@ function renderLiabilityPanel() {
   } else {
     debtsInPeriod.forEach(d => {
       const status = debtStatus(d);
+      const remaining = Math.max(totalToRepayForDebt(d) - totalPaidForDebt(d.id), 0);
       const row = document.createElement("div");
       row.className = "tx-row";
       row.innerHTML = `
@@ -652,11 +715,11 @@ function renderLiabilityPanel() {
           <span class="tx-dot out"></span>
           <div class="tx-info">
             <div class="tx-title">${escapeHtml(d.source)} ${d.notes ? "· " + escapeHtml(d.notes) : ""}</div>
-            <div class="tx-meta">${dict.debt_tagihan}: ${fmtRp(d.tagihanPerBulan)}/bln · ${d.jangkaWaktu} bln</div>
+            <div class="tx-meta">${dict.debt_tagihan}: ${state.showBalance ? fmtRp(d.tagihanPerBulan) : "Rp ••••••"}${dict.per_month} · ${d.jangkaWaktu} ${dict.months_unit} · ${dict.debt_remaining_short}: ${state.showBalance ? fmtRp(remaining) : "Rp ••••••"}</div>
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:10px;">
-          <span class="tx-amount out">${fmtRp(d.kewajiban)}</span>
+          <span class="tx-amount out">${state.showBalance ? fmtRp(d.kewajiban) : "Rp ••••••"}</span>
           <span class="status-tag ${status === 'Aktif' ? 'aktif' : 'lunas'}">${status === 'Aktif' ? dict.debt_aktif : dict.debt_lunas}</span>
         </div>`;
       list.appendChild(row);
@@ -673,15 +736,10 @@ function renderTxRow(tx, withActions) {
   const kind = txKindClass(tx.type);
   const sign = tx.type === "Pemasukan" ? "+" : tx.type === "Pengeluaran" ? "-" : "~";
   const typeLabel = tx.type === "Pemasukan" ? dict.income : tx.type === "Pengeluaran" ? dict.expense : dict.transfer;
-  
   let acc;
-  if (tx.type === "Pemasukan") {
-    acc = tx.accountTo;
-  } else if (tx.type === "Pengeluaran") {
-    acc = tx.payMethod === "paylater" ? `Paylater (${tx.debtSource || 'Utang'})` : tx.accountFrom;
-  } else {
-    acc = `${tx.accountFrom} → ${tx.accountTo}`;
-  }
+  if (tx.type === "Pengeluaran") acc = tx.accountFrom;
+  else if (tx.type === "Pemasukan") acc = `${incomeSourceLabel(tx.incomeSource)} → ${tx.accountTo}`;
+  else acc = `${tx.accountFrom} → ${tx.accountTo}`;
 
   row.innerHTML = `
     <div class="tx-left">
@@ -702,58 +760,79 @@ function renderTxRow(tx, withActions) {
   return row;
 }
 
+function incomeSourceLabel(src) {
+  const dict = tr();
+  if (src === "Gaji Bulanan") return dict.income_src_salary;
+  if (src === "Side Income") return dict.income_src_side;
+  if (src === "Penghasilan Lainnya") return dict.income_src_other;
+  return src || dict.income_src_other;
+}
+
+/* ---------------------------------------------------------------------- */
+/* TRANSAKSI                                                              */
+/* ---------------------------------------------------------------------- */
 let txType = "Pengeluaran";
 
 function renderTxFormOptions() {
+  const dict = tr();
   const accFrom = document.getElementById("txAccFrom");
   const accTo = document.getElementById("txAccTo");
   const cat = document.getElementById("txCategory");
-  const debtLink = document.getElementById("txDebtLink");
-
   [accFrom, accTo].forEach(sel => {
     const prev = sel.value;
     sel.innerHTML = state.accounts.map(a => `<option value="${escapeHtml(a.name)}">${escapeHtml(a.name)}</option>`).join("");
     if (prev) sel.value = prev;
   });
   if (accTo.selectedIndex === 0 && state.accounts.length > 1) accTo.selectedIndex = 1;
-  cat.innerHTML = state.categories.map(b => `<option value="${b.code}">${b.code} — ${escapeHtml(b.name)}</option>`).join("");
+  cat.innerHTML = state.budget.map(b => `<option value="${b.code}">${b.code} — ${escapeHtml(b.name)}</option>`).join("");
 
+  const debtLink = document.getElementById("txDebtLink");
+  const prevDebtLink = debtLink.value;
   const activeDebts = state.debts.filter(d => debtStatus(d) === "Aktif");
-  debtLink.innerHTML = activeDebts.length 
-    ? activeDebts.map(d => `<option value="${d.id}">${escapeHtml(d.source)} — ${escapeHtml(d.notes || 'Utang Aktif')} (${fmtRp(d.kewajiban)})</option>`).join("")
-    : `<option value="">(Tidak ada utang aktif)</option>`;
+  debtLink.innerHTML = `<option value="">${dict.debt_no_link}</option>` + activeDebts.map(d => {
+    const remaining = totalToRepayForDebt(d) - totalPaidForDebt(d.id);
+    return `<option value="${d.id}">${escapeHtml(d.source)}${d.notes ? " · " + escapeHtml(d.notes) : ""} — ${dict.debt_remaining_short}: ${fmtRp(remaining)}</option>`;
+  }).join("");
+  if ([...debtLink.options].some(o => o.value === prevDebtLink)) debtLink.value = prevDebtLink;
+
+  updateDebtLinkVisibility();
+}
+
+function updateDebtLinkVisibility() {
+  const fieldDebtLink = document.getElementById("fieldDebtLink");
+  const cat = document.getElementById("txCategory").value;
+  const show = txType === "Pengeluaran" && cat === DEBT_CATEGORY_CODE;
+  fieldDebtLink.classList.toggle("hidden", !show);
 }
 
 function applyTxTypeUI() {
   const dict = tr();
   document.querySelectorAll("#txTypeGroup .pill").forEach(p => p.classList.toggle("active", p.dataset.type === txType));
-  
-  const fieldAccFrom = document.getElementById("fieldAccFrom");
   const fieldAccTo = document.getElementById("fieldAccTo");
   const fieldCategory = document.getElementById("fieldCategory");
-  const fieldPayMethod = document.getElementById("fieldPayMethod");
-  const fieldDebtLink = document.getElementById("fieldDebtLink");
-
-  fieldAccFrom.classList.remove("hidden");
-  fieldAccTo.classList.add("hidden");
-  fieldCategory.classList.add("hidden");
-  fieldPayMethod.classList.add("hidden");
-  fieldDebtLink.classList.add("hidden");
+  const fieldIncomeSource = document.getElementById("fieldIncomeSource");
+  const labelAccFrom = document.getElementById("labelAccFrom");
+  const labelAccTo = document.getElementById("labelAccTo");
 
   if (txType === "Pengeluaran") {
+    fieldAccTo.classList.add("hidden");
+    fieldIncomeSource.classList.add("hidden");
     fieldCategory.classList.remove("hidden");
-    fieldPayMethod.classList.remove("hidden");
-    const payMethod = document.getElementById("txPayMethod").value;
-    if (payMethod === "paylater") {
-      fieldAccFrom.classList.add("hidden");
-      fieldDebtLink.classList.remove("hidden");
-    }
+    labelAccFrom.textContent = dict.acc_from;
   } else if (txType === "Pemasukan") {
-    fieldAccFrom.classList.add("hidden"); 
     fieldAccTo.classList.remove("hidden");
+    fieldIncomeSource.classList.remove("hidden");
+    fieldCategory.classList.add("hidden");
+    labelAccFrom.textContent = dict.acc_from;
+    labelAccTo.textContent = dict.acc_to;
   } else {
     fieldAccTo.classList.remove("hidden");
+    fieldIncomeSource.classList.add("hidden");
+    fieldCategory.classList.add("hidden");
+    labelAccFrom.textContent = dict.from_acc;
+    labelAccTo.textContent = dict.to_acc;
   }
+  updateDebtLinkVisibility();
 }
 
 function renderTransaksi() {
@@ -791,12 +870,9 @@ function openEditModal(id) {
 }
 function closeEditModal() { document.getElementById("editModal").classList.add("hidden"); }
 
-/* DEBT & INVESTMENTS */
-function calcDebtInterest(kewajiban, tagihanPerBulan, jangkaWaktu) {
-  const totalBunga = (tagihanPerBulan * jangkaWaktu) - kewajiban;
-  const persenBunga = kewajiban > 0 ? (totalBunga / kewajiban) * 100 : 0;
-  return { totalBunga, persenBunga };
-}
+/* ---------------------------------------------------------------------- */
+/* DEBT / LOANS                                                           */
+/* ---------------------------------------------------------------------- */
 function recalcDebtFormPreview() {
   const kewajiban = rawNumber(document.getElementById("debtKewajiban"));
   const admin = rawNumber(document.getElementById("debtAdmin"));
@@ -808,6 +884,7 @@ function recalcDebtFormPreview() {
   document.getElementById("debtBungaNominal").textContent = fmtRp(totalBunga);
   document.getElementById("debtBungaPersen").textContent = persenBunga.toFixed(2) + "%";
 }
+
 function renderDebtSection() {
   const dict = tr();
   document.getElementById("debtCount").textContent = dict.debt_count(state.debts.length);
@@ -819,6 +896,10 @@ function renderDebtSection() {
   }
   [...state.debts].sort((a, b) => (a.startDate < b.startDate ? 1 : -1)).forEach(d => {
     const status = debtStatus(d);
+    const totalToRepay = totalToRepayForDebt(d);
+    const paid = totalPaidForDebt(d.id);
+    const remaining = Math.max(totalToRepay - paid, 0);
+    const pct = totalToRepay > 0 ? Math.min((paid / totalToRepay) * 100, 100) : 0;
     const row = document.createElement("div");
     row.className = "tx-row";
     row.innerHTML = `
@@ -826,15 +907,17 @@ function renderDebtSection() {
         <span class="tx-dot out"></span>
         <div class="tx-info">
           <div class="tx-title">${escapeHtml(d.source)} ${d.notes ? "· " + escapeHtml(d.notes) : ""}</div>
-          <div class="tx-meta">${fmtDateDisplay(d.startDate)} · ${fmtRp(d.tagihanPerBulan)}/bln · ${d.jangkaWaktu}bln</div>
+          <div class="tx-meta">${fmtDateDisplay(d.startDate)} · ${fmtRp(d.tagihanPerBulan)}${dict.per_month} × ${d.jangkaWaktu}${dict.months_unit} · ${dict.debt_bunga_persen_short} ${d.persenBunga.toFixed(2)}%</div>
+          <div class="tx-meta">${dict.debt_progress(fmtRp(paid), fmtRp(totalToRepay))} · ${dict.debt_remaining_short}: ${fmtRp(remaining)}</div>
+          <div class="rank-track" style="margin-top:4px;max-width:220px;"><div class="rank-fill N" style="width:${pct}%"></div></div>
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
         <span class="tx-amount out">${fmtRp(d.kewajiban)}</span>
         <span class="status-tag ${status === 'Aktif' ? 'aktif' : 'lunas'}">${status === 'Aktif' ? dict.debt_aktif : dict.debt_lunas}</span>
         <span class="tx-actions">
-          <button class="icon-btn toggle-debt-status" data-id="${d.id}">${status === 'Aktif' ? '✓' : '↺'}</button>
-          <button class="icon-btn danger del-debt" data-id="${d.id}">✕</button>
+          <button class="icon-btn toggle-debt-status" data-id="${d.id}" title="${status === 'Aktif' ? dict.mark_paid : dict.mark_active}">${status === 'Aktif' ? '✓' : '↺'}</button>
+          <button class="icon-btn danger del-debt" data-id="${d.id}" title="${dict.delete}">✕</button>
         </span>
       </div>`;
     list.appendChild(row);
@@ -848,6 +931,8 @@ function renderDebtSection() {
     saveState();
     renderDebtSection();
     renderOverview();
+    renderTxFormOptions();
+    if (currentView === "analisis") renderAnalisis();
   }));
   list.querySelectorAll(".del-debt").forEach(b => b.addEventListener("click", () => {
     if (confirm(dict.delete_debt_confirm)) {
@@ -855,12 +940,19 @@ function renderDebtSection() {
       saveState();
       renderDebtSection();
       renderOverview();
+      renderTxFormOptions();
+      if (currentView === "analisis") renderAnalisis();
     }
   }));
 }
 
+/* ---------------------------------------------------------------------- */
+/* INVESTMENTS                                                            */
+/* ---------------------------------------------------------------------- */
 let investType = "beli";
+
 function activeInvestmentLots() { return state.investments.filter(i => i.status === "Aktif"); }
+
 function applyInvestTypeUI() {
   const dict = tr();
   document.querySelectorAll("#investTypeGroup .pill").forEach(p => p.classList.toggle("active", p.dataset.invtype === investType));
@@ -892,6 +984,7 @@ function applyInvestTypeUI() {
       : `<option value="">${dict.invest_none_active}</option>`;
   }
 }
+
 function renderInvestSection() {
   const dict = tr();
   applyInvestTypeUI();
@@ -907,45 +1000,58 @@ function renderInvestSection() {
     let rightHtml;
     if (inv.status === "Terjual") {
       const profit = inv.profitLoss >= 0;
-      rightHtml = `<span class="pl-value ${profit ? 'profit' : 'loss'}" style="font-weight:600;">${profit ? '+' : ''}${fmtRp(inv.profitLoss)}</span><span class="status-tag terjual">Terjual</span>`;
+      rightHtml = `
+        <span class="pl-value ${profit ? 'profit' : 'loss'}" style="font-weight:600;">${profit ? '+' : ''}${fmtRp(inv.profitLoss)} (${profit ? '+' : ''}${inv.profitPct.toFixed(2)}%)</span>
+        <span class="status-tag terjual">${state.lang === 'ID' ? 'Terjual' : 'Sold'}</span>`;
     } else {
-      rightHtml = `<span class="tx-amount out">${fmtRp(inv.modal)}</span><span class="status-tag aktif">Aktif</span>`;
+      rightHtml = `<span class="tx-amount out">${fmtRp(inv.modal)}</span><span class="status-tag aktif">${dict.debt_aktif}</span>`;
     }
     row.innerHTML = `
       <div class="tx-left">
         <span class="tx-dot ${inv.status === 'Terjual' ? (inv.profitLoss >= 0 ? 'in' : 'out') : 'transfer'}"></span>
         <div class="tx-info">
           <div class="tx-title">${escapeHtml(inv.kode)} <span class="muted small">(${escapeHtml(inv.jenis)})</span></div>
-          <div class="tx-meta">${fmtDateDisplay(inv.tanggalBeli)} · ${fmtRp(inv.modal)}</div>
+          <div class="tx-meta">${dict.invest_form_title}: ${fmtDateDisplay(inv.tanggalBeli)} · ${fmtRp(inv.modal)}${inv.status === 'Terjual' ? ` · ${dict.invest_sell}: ${fmtDateDisplay(inv.tanggalJual)} · ${fmtRp(inv.nominalDiterima)}` : ''}</div>
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
         ${rightHtml}
-        <span class="tx-actions"><button class="icon-btn danger del-invest" data-id="${inv.id}">✕</button></span>
+        <span class="tx-actions"><button class="icon-btn danger del-invest" data-id="${inv.id}" title="${dict.delete}">✕</button></span>
       </div>`;
     list.appendChild(row);
   });
+
   list.querySelectorAll(".del-invest").forEach(b => b.addEventListener("click", () => {
     if (confirm(dict.delete_confirm)) {
       state.investments = state.investments.filter(i => i.id !== b.dataset.id);
       saveState();
       renderInvestSection();
       renderOverview();
+      if (currentView === "analisis") renderAnalisis();
     }
   }));
 }
 
+/* ---------------------------------------------------------------------- */
+/* CATEGORY / CHART OF ACCOUNTS                                           */
+/* ---------------------------------------------------------------------- */
 let catManualOverride = false;
 let editingCatCode = null;
+
 function nextCategoryCode(jenis) {
+  if (!state) return "";
   const p = JENIS_PREFIX[jenis];
-  const existing = [...state.categories.map(b => b.code), ...state.chartOfAccounts.map(c => c.code)].filter(c => c && c.startsWith(p)).map(c => parseInt(c, 10)).filter(n => !isNaN(n));
+  const existing = [
+    ...state.budget.map(b => b.code),
+    ...state.chartOfAccounts.map(c => c.code),
+  ].filter(c => c && c.startsWith(p)).map(c => parseInt(c, 10)).filter(n => !isNaN(n));
   const base = parseInt(p + "000", 10);
   const maxN = existing.length ? Math.max(...existing, base) : base;
   return String(maxN + 1);
 }
+
 function applyCatFormAutoSuggest() {
-  if (catManualOverride) return;
+  if (catManualOverride || !state) return;
   const name = document.getElementById("catName").value;
   const jenis = suggestJenis(name);
   document.getElementById("catJenis").value = jenis;
@@ -956,13 +1062,16 @@ function toggleKonsumtifWrap() {
   const jenis = document.getElementById("catJenis").value;
   document.getElementById("catKonsumtifWrap").classList.toggle("hidden", jenis !== "Beban");
 }
+
 function renderCategorySection() {
   const dict = tr();
   const tbody = document.getElementById("catTableBody");
   tbody.innerHTML = "";
-  const bebanRows = state.categories.map(b => ({ code: b.code, name: b.name, jenis: "Beban", konsumtif: b.type, source: "budget" }));
+
+  const bebanRows = state.budget.map(b => ({ code: b.code, name: b.name, jenis: "Beban", konsumtif: b.type, source: "budget" }));
   const otherRows = state.chartOfAccounts.map(c => ({ code: c.code, name: c.name, jenis: c.jenis, konsumtif: null, source: "coa" }));
   const rows = [...bebanRows, ...otherRows].sort((a, b) => a.code.localeCompare(b.code));
+
   const jenisLabel = { Harta: dict.jenis_harta, Utang: dict.jenis_utang, Modal: dict.jenis_modal, Pendapatan: dict.jenis_pendapatan, Beban: dict.jenis_beban };
   const jenisTagClass = { Harta: "harta", Utang: "utang", Modal: "modal", Pendapatan: "pendapatan", Beban: "nonkonsumtif" };
 
@@ -973,21 +1082,24 @@ function renderCategorySection() {
       <td>${escapeHtml(r.name)}</td>
       <td><span class="tag ${jenisTagClass[r.jenis]}">${jenisLabel[r.jenis]}</span></td>
       <td style="text-align:right;white-space:nowrap;">
-        <button class="icon-btn edit-cat" data-code="${r.code}" data-source="${r.source}">✎</button>
-        <button class="icon-btn danger del-cat" data-code="${r.code}" data-source="${r.source}">✕</button>
+        <button class="icon-btn edit-cat" data-code="${r.code}" data-source="${r.source}" title="${dict.edit}">✎</button>
+        <button class="icon-btn danger del-cat" data-code="${r.code}" data-source="${r.source}" title="${dict.delete}">✕</button>
       </td>`;
     tbody.appendChild(tr_);
   });
+
   tbody.querySelectorAll(".edit-cat").forEach(b => b.addEventListener("click", () => startEditCategory(b.dataset.code, b.dataset.source)));
   tbody.querySelectorAll(".del-cat").forEach(b => b.addEventListener("click", () => deleteCategory(b.dataset.code, b.dataset.source)));
 }
+
 function startEditCategory(code, source) {
+  const dict = tr();
   catManualOverride = true;
   editingCatCode = code;
   document.getElementById("catCancelEdit").classList.remove("hidden");
-  document.getElementById("catSubmitBtn").textContent = tr().cat_update;
+  document.getElementById("catSubmitBtn").textContent = dict.cat_update;
   if (source === "budget") {
-    const row = state.categories.find(b => b.code === code);
+    const row = state.budget.find(b => b.code === code);
     document.getElementById("catName").value = row.name;
     document.getElementById("catJenis").value = "Beban";
     document.getElementById("catCode").value = row.code;
@@ -999,6 +1111,7 @@ function startEditCategory(code, source) {
     document.getElementById("catCode").value = row.code;
   }
   toggleKonsumtifWrap();
+  document.getElementById("catName").focus();
 }
 function cancelEditCategory() {
   catManualOverride = false;
@@ -1010,7 +1123,7 @@ function cancelEditCategory() {
 }
 function deleteCategory(code, source) {
   if (!confirm(tr().delete_cat_confirm)) return;
-  if (source === "budget") state.categories = state.categories.filter(b => b.code !== code);
+  if (source === "budget") state.budget = state.budget.filter(b => b.code !== code);
   else state.chartOfAccounts = state.chartOfAccounts.filter(c => c.code !== code);
   saveState();
   draftBudget = null;
@@ -1018,77 +1131,45 @@ function deleteCategory(code, source) {
   renderEverything();
 }
 
-/* MONTHLY BUDGET & FILTER LOGIC */
-function populateBudgetMonthYear() {
-  const mSel = document.getElementById("bgMonth");
-  const ySel = document.getElementById("bgYear");
-  if (!mSel.dataset.bound) {
-    const monthNamesID = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-    const monthNamesEN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-    const names = state.lang === "ID" ? monthNamesID : monthNamesEN;
-    const now = new Date();
-    mSel.innerHTML = names.map((n, i) => `<option value="${i + 1}">${n}</option>`).join("");
-    mSel.value = now.getMonth() + 1;
-    const years = new Set([now.getFullYear()]);
-    state.transactions.forEach(t => years.add(parseISO(t.date).getFullYear()));
-    ySel.innerHTML = [...years].sort((a, b) => a - b).map(y => `<option value="${y}">${y}</option>`).join("");
-    ySel.value = now.getFullYear();
-    mSel.dataset.bound = "1";
-    mSel.addEventListener("change", renderAnggaran);
-    ySel.addEventListener("change", renderAnggaran);
-  }
+/* ---------------------------------------------------------------------- */
+/* ANGGARAN                                                               */
+/* ---------------------------------------------------------------------- */
+function totalIncomeAllTime() {
+  return state.transactions.filter(t => t.type === "Pemasukan").reduce((s, t) => s + t.amount, 0);
 }
 
-function getSelectedBudgetPeriodKey() {
-  const m = String(document.getElementById("bgMonth").value || (new Date().getMonth() + 1)).padStart(2, "0");
-  const y = String(document.getElementById("bgYear").value || new Date().getFullYear());
-  return `${y}-${m}`;
-}
-
-function getActiveMonthBudgetList() {
-  const periodKey = getSelectedBudgetPeriodKey();
-  if (!state.monthlyBudgets[periodKey]) {
-    // Inisialisasi default dari master categories jika belum ada untuk bulan tersebut
-    state.monthlyBudgets[periodKey] = state.categories.map(c => ({
-      code: c.code,
-      name: c.name,
-      type: c.type,
-      targetPercent: 0,
-      targetBudget: 0
-    }));
-  }
-  return state.monthlyBudgets[periodKey];
-}
-
-function totalIncomeForMonth(year, month) {
-  return state.transactions
-    .filter(t => {
-      const d = parseISO(t.date);
-      return t.type === "Pemasukan" && d.getFullYear() === year && (d.getMonth() + 1) === month;
-    })
-    .reduce((s, t) => s + t.amount, 0);
+/* Budget targets are based on monthly salary only (Gaji Bulanan), not side
+   income or other income sources. Uses this calendar month's salary if any
+   has been logged, otherwise falls back to the most recent month that has
+   a salary entry, so budgeting keeps working even before this month's
+   payday is recorded. */
+function monthlySalaryBasis() {
+  const gajiTx = state.transactions.filter(t => t.type === "Pemasukan" && t.incomeSource === "Gaji Bulanan");
+  if (gajiTx.length === 0) return { amount: 0, monthKey: null };
+  const byMonth = {};
+  gajiTx.forEach(t => { const k = t.date.slice(0, 7); byMonth[k] = (byMonth[k] || 0) + t.amount; });
+  const thisMonthKey = todayISO().slice(0, 7);
+  if (byMonth[thisMonthKey] !== undefined) return { amount: byMonth[thisMonthKey], monthKey: thisMonthKey };
+  const latestKey = Object.keys(byMonth).sort().pop();
+  return { amount: byMonth[latestKey], monthKey: latestKey };
 }
 
 function ensureDraftBudget() {
-  const currentList = getActiveMonthBudgetList();
-  if (!draftBudget) {
-    draftBudget = JSON.parse(JSON.stringify(currentList));
+  if (!draftBudget || draftBudget.length !== state.budget.length) {
+    draftBudget = JSON.parse(JSON.stringify(state.budget));
   }
 }
 
 function renderBudgetSettings() {
   const dict = tr();
-  populateBudgetMonthYear();
   ensureDraftBudget();
-
-  const month = Number(document.getElementById("bgMonth").value);
-  const year = Number(document.getElementById("bgYear").value);
-  const income = totalIncomeForMonth(year, month);
+  const salary = monthlySalaryBasis();
+  const income = salary.amount;
 
   const infoBox = document.getElementById("incomeInfo");
   if (income > 0) {
     infoBox.className = "callout ok";
-    infoBox.innerHTML = dict.income_info(fmtRp(income));
+    infoBox.innerHTML = dict.salary_info(fmtRp(income), salary.monthKey ? monthLabelFromKey(salary.monthKey) : "");
   } else {
     infoBox.className = "callout warn";
     infoBox.textContent = dict.no_income_warn;
@@ -1098,34 +1179,44 @@ function renderBudgetSettings() {
   rowsWrap.innerHTML = "";
 
   draftBudget.forEach((row, idx) => {
+    const locked = !!row.locked;
+    if (locked) {
+      row.targetPercent = 2.5;
+      row.targetBudget = income * 0.025;
+    }
     const rowEl = document.createElement("div");
     rowEl.className = "budget-grid budget-row";
     rowEl.innerHTML = `
       <span class="cat-code">${row.code}</span>
       <span class="cat-name">${escapeHtml(row.name)}</span>
-      <input type="text" inputmode="numeric" id="rp-${idx}" value="${Math.round(row.targetBudget || 0).toLocaleString('id-ID')}">
-      <input type="number" min="0" step="0.1" id="pct-${idx}" value="${(row.targetPercent || 0).toFixed(2)}">
+      ${locked
+        ? `<span class="locked">${fmtRp(row.targetBudget)}</span>`
+        : `<input type="text" inputmode="numeric" id="rp-${idx}" value="${Math.round(row.targetBudget).toLocaleString('id-ID')}">`}
+      ${locked
+        ? `<span class="locked">${row.targetPercent.toFixed(2)}%</span>`
+        : `<input type="number" min="0" step="0.1" id="pct-${idx}" value="${row.targetPercent.toFixed(2)}">`}
     `;
     rowsWrap.appendChild(rowEl);
 
-    const rpInput = rowEl.querySelector(`#rp-${idx}`);
-    const pctInput = rowEl.querySelector(`#pct-${idx}`);
-    attachRupiahMask(rpInput);
-
-    rpInput.addEventListener("rupiahchange", () => {
-      const val = rawNumber(rpInput);
-      draftBudget[idx].targetBudget = val;
-      draftBudget[idx].targetPercent = income > 0 ? (val / income) * 100 : 0;
-      pctInput.value = draftBudget[idx].targetPercent.toFixed(2);
-      updateBudgetTotals();
-    });
-    pctInput.addEventListener("input", () => {
-      const val = parseFloat(pctInput.value) || 0;
-      draftBudget[idx].targetPercent = val;
-      draftBudget[idx].targetBudget = income > 0 ? (income * val) / 100 : 0;
-      setRupiahValue(rpInput, draftBudget[idx].targetBudget);
-      updateBudgetTotals();
-    });
+    if (!locked) {
+      const rpInput = rowEl.querySelector(`#rp-${idx}`);
+      const pctInput = rowEl.querySelector(`#pct-${idx}`);
+      attachRupiahMask(rpInput);
+      rpInput.addEventListener("rupiahchange", () => {
+        const val = rawNumber(rpInput);
+        draftBudget[idx].targetBudget = val;
+        draftBudget[idx].targetPercent = income > 0 ? (val / income) * 100 : 0;
+        pctInput.value = draftBudget[idx].targetPercent.toFixed(2);
+        updateBudgetTotals();
+      });
+      pctInput.addEventListener("input", () => {
+        const val = parseFloat(pctInput.value) || 0;
+        draftBudget[idx].targetPercent = val;
+        draftBudget[idx].targetBudget = income > 0 ? (income * val) / 100 : 0;
+        setRupiahValue(rpInput, draftBudget[idx].targetBudget);
+        updateBudgetTotals();
+      });
+    }
   });
 
   updateBudgetTotals();
@@ -1133,8 +1224,8 @@ function renderBudgetSettings() {
 
 function updateBudgetTotals() {
   const dict = tr();
-  const totalRp = draftBudget.reduce((s, r) => s + (r.targetBudget || 0), 0);
-  const totalPct = draftBudget.reduce((s, r) => s + (r.targetPercent || 0), 0);
+  const totalRp = draftBudget.reduce((s, r) => s + r.targetBudget, 0);
+  const totalPct = draftBudget.reduce((s, r) => s + r.targetPercent, 0);
   document.getElementById("budgetTotalRp").textContent = fmtRp(totalRp);
   document.getElementById("budgetTotalPct").textContent = totalPct.toFixed(2) + "%";
 
@@ -1150,24 +1241,24 @@ function updateBudgetTotals() {
 
 function renderBudgetMonitoring() {
   const dict = tr();
-  const month = Number(document.getElementById("bgMonth").value);
-  const year = Number(document.getElementById("bgYear").value);
-
-  document.getElementById("budgetVsActSubtitle").textContent = `${dict.budget_vs_act_desc} ${month}/${year}`;
-
   const spentByCategory = {};
-  state.transactions.filter(t => {
-    const d = parseISO(t.date);
-    return t.type === "Pengeluaran" && d.getFullYear() === year && (d.getMonth() + 1) === month;
-  }).forEach(t => {
+  state.transactions.filter(t => t.type === "Pengeluaran").forEach(t => {
     spentByCategory[t.categoryCode] = (spentByCategory[t.categoryCode] || 0) + t.amount;
   });
 
-  const activeBudgetList = getActiveMonthBudgetList();
+  const salary = monthlySalaryBasis();
+  const salaryBox = document.getElementById("salaryBasisInfo");
+  if (salary.amount > 0) {
+    salaryBox.className = "callout ok";
+    salaryBox.innerHTML = dict.salary_info(fmtRp(salary.amount), monthLabelFromKey(salary.monthKey));
+  } else {
+    salaryBox.className = "callout warn";
+    salaryBox.textContent = dict.no_salary_warn;
+  }
+
   const tbody = document.getElementById("budgetTableBody");
   tbody.innerHTML = "";
-
-  activeBudgetList.forEach(row => {
+  state.budget.forEach(row => {
     const actual = spentByCategory[row.code] || 0;
     const remaining = row.targetBudget - actual;
     const ok = actual <= row.targetBudget;
@@ -1183,18 +1274,19 @@ function renderBudgetMonitoring() {
     tbody.appendChild(tr_);
   });
 
-  return { spentByCategory, activeBudgetList };
+  return spentByCategory;
 }
 
-function renderBudgetChart(spentByCategory, activeBudgetList) {
+function renderBudgetChart(spentByCategory) {
   const chart = document.getElementById("budgetChart");
   chart.innerHTML = "";
 
-  const maxVal = niceCeil(Math.max(...activeBudgetList.map(r => Math.max(r.targetBudget, spentByCategory[r.code] || 0)), 1));
+  const maxVal = niceCeil(Math.max(...state.budget.map(r => Math.max(r.targetBudget, spentByCategory[r.code] || 0)), 1));
   const gridWrap = document.createElement("div");
   gridWrap.className = "gridlines";
-  for (let i = 0; i <= 4; i++) {
-    const v = (maxVal / 4) * i;
+  const steps = 4;
+  for (let i = 0; i <= steps; i++) {
+    const v = (maxVal / steps) * i;
     const line = document.createElement("div");
     line.className = "gridline";
     line.style.bottom = `${(v / maxVal) * 100}%`;
@@ -1203,7 +1295,7 @@ function renderBudgetChart(spentByCategory, activeBudgetList) {
   }
   chart.appendChild(gridWrap);
 
-  activeBudgetList.forEach(row => {
+  state.budget.forEach(row => {
     const actual = spentByCategory[row.code] || 0;
     const col = document.createElement("div");
     col.className = "chart-col";
@@ -1211,8 +1303,8 @@ function renderBudgetChart(spentByCategory, activeBudgetList) {
     const aH = maxVal > 0 ? (actual / maxVal) * 100 : 0;
     col.innerHTML = `
       <div class="chart-bars">
-        <div class="chart-bar target" style="height:${tH}%"></div>
-        <div class="chart-bar actual" style="height:${aH}%"></div>
+        <div class="chart-bar target" style="height:${tH}%" title="${tr().target}: ${fmtRp(row.targetBudget)}"></div>
+        <div class="chart-bar actual" style="height:${aH}%" title="${tr().actual}: ${fmtRp(actual)}"></div>
       </div>
       <div class="chart-col-label">${row.code}</div>
     `;
@@ -1222,67 +1314,79 @@ function renderBudgetChart(spentByCategory, activeBudgetList) {
 
 function renderAnggaran() {
   renderBudgetSettings();
-  const { spentByCategory, activeBudgetList } = renderBudgetMonitoring();
-  renderBudgetChart(spentByCategory, activeBudgetList);
+  const spent = renderBudgetMonitoring();
+  renderBudgetChart(spent);
 }
 
+/* ---------------------------------------------------------------------- */
+/* ANALISIS                                                               */
+/* ---------------------------------------------------------------------- */
 let period = "monthly";
-let selectedWeek = null;
-function populateAnalysisMonthYear() {
-  const mSel = document.getElementById("anMonth");
-  const ySel = document.getElementById("anYear");
-  if (!mSel.dataset.bound) {
-    const monthNamesID = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-    const monthNamesEN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-    const names = state.lang === "ID" ? monthNamesID : monthNamesEN;
-    const now = new Date();
-    mSel.innerHTML = names.map((n, i) => `<option value="${i + 1}">${n}</option>`).join("");
-    mSel.value = now.getMonth() + 1;
-    const years = new Set([now.getFullYear()]);
-    state.transactions.forEach(t => years.add(parseISO(t.date).getFullYear()));
-    ySel.innerHTML = [...years].sort((a, b) => a - b).map(y => `<option value="${y}">${y}</option>`).join("");
-    ySel.value = now.getFullYear();
-    mSel.dataset.bound = "1";
-    mSel.addEventListener("change", renderAnalisis);
-    ySel.addEventListener("change", renderAnalisis);
-  }
+let selectedWeek = null; /* 1-4, week-of-month bucket, only used when period === "weekly" */
+
+/* Splits a month into 4 fixed buckets: 1-7, 8-14, 15-21, 22-end. Simple and
+   predictable, avoids a ragged 5th week at month boundaries. */
+function weekOfMonthBucket(iso) {
+  const day = parseISO(iso).getDate();
+  if (day <= 7) return 1;
+  if (day <= 14) return 2;
+  if (day <= 21) return 3;
+  return 4;
 }
+
 function renderAnalisis() {
   const dict = tr();
-  populateAnalysisMonthYear();
-  const weeks = [...new Set(state.transactions.map(t => isoWeek(t.date)))].sort((a, b) => a - b);
+
+  const anMonthSel = document.getElementById("anMonth");
+  const anYearSel = document.getElementById("anYear");
+  if (!anMonthSel.dataset.bound) {
+    populateMonthYearSelect(anMonthSel, anYearSel);
+    anMonthSel.dataset.bound = "1";
+  }
+  const anMonth = Number(anMonthSel.value) || (new Date().getMonth() + 1);
+  const anYear = Number(anYearSel.value) || new Date().getFullYear();
+
   const weekSelect = document.getElementById("weekSelect");
   if (period === "weekly") {
     weekSelect.classList.remove("hidden");
-    weekSelect.innerHTML = weeks.map(w => `<option value="${w}">${dict.week_label}${w}</option>`).join("");
-    if (selectedWeek === null || !weeks.includes(selectedWeek)) selectedWeek = weeks[weeks.length - 1] || null;
-    if (selectedWeek !== null) weekSelect.value = selectedWeek;
+    if (!weekSelect.dataset.bound) {
+      weekSelect.innerHTML = [1, 2, 3, 4].map(w => `<option value="${w}">${dict.week_label}${w}</option>`).join("");
+      weekSelect.dataset.bound = "1";
+    }
+    if (selectedWeek === null) selectedWeek = 1;
+    weekSelect.value = selectedWeek;
   } else {
     weekSelect.classList.add("hidden");
   }
-  const anMonth = Number(document.getElementById("anMonth").value) || (new Date().getMonth() + 1);
-  const anYear = Number(document.getElementById("anYear").value) || new Date().getFullYear();
 
+  /* Both Bulanan and Mingguan are scoped to the chosen month/year; Mingguan
+     additionally narrows down to one week-of-month bucket within it. */
   let dashTx = state.transactions.filter(t => {
+    if (t.type !== "Pengeluaran") return false;
     const d = parseISO(t.date);
-    return d.getFullYear() === anYear && (d.getMonth() + 1) === anMonth && t.type === "Pengeluaran";
+    return d.getFullYear() === anYear && d.getMonth() + 1 === anMonth;
   });
   if (period === "weekly" && selectedWeek !== null) {
-    dashTx = dashTx.filter(t => isoWeek(t.date) === selectedWeek);
+    dashTx = dashTx.filter(t => weekOfMonthBucket(t.date) === selectedWeek);
   }
+
   const spentByCategory = {};
   dashTx.forEach(t => { spentByCategory[t.categoryCode] = (spentByCategory[t.categoryCode] || 0) + t.amount; });
 
-  const activeBudgetList = getActiveMonthBudgetList();
-  const konsumtifAmt = activeBudgetList.filter(b => b.type === "Konsumtif").reduce((s, b) => s + (spentByCategory[b.code] || 0), 0);
-  const nonKonsumtifAmt = activeBudgetList.filter(b => b.type === "Non-Konsumtif").reduce((s, b) => s + (spentByCategory[b.code] || 0), 0);
-  
-  const periodIncomeTx = state.transactions.filter(t => {
-    const d = parseISO(t.date);
-    return d.getFullYear() === anYear && (d.getMonth() + 1) === anMonth && t.type === "Pemasukan";
-  });
-  const totalIncome = periodIncomeTx.reduce((s, t) => s + t.amount, 0);
-  const ratio = totalIncome > 0 ? (konsumtifAmt / totalIncome) * 100 : 0;
+  const konsumtifAmt = state.budget.filter(b => b.type === "Konsumtif").reduce((s, b) => s + (spentByCategory[b.code] || 0), 0);
+  const nonKonsumtifAmt = state.budget.filter(b => b.type === "Non-Konsumtif").reduce((s, b) => s + (spentByCategory[b.code] || 0), 0);
+
+  /* Income for the ratio/breakdown is scoped to the selected month too, so
+     the percentage reflects the period being viewed. The DSR indicator
+     further down still uses all-time income (see renderExtraIndicators),
+     since debt capacity shouldn't reset every time you change this filter. */
+  const periodIncome = state.transactions
+    .filter(t => t.type === "Pemasukan")
+    .filter(t => { const d = parseISO(t.date); return d.getFullYear() === anYear && d.getMonth() + 1 === anMonth; })
+    .reduce((s, t) => s + t.amount, 0);
+
+  const totalExpenseDash = konsumtifAmt + nonKonsumtifAmt;
+  const ratio = periodIncome > 0 ? (konsumtifAmt / periodIncome) * 100 : 0;
 
   const donut = document.getElementById("donutChart");
   const legend = document.getElementById("donutLegend");
@@ -1294,26 +1398,37 @@ function renderAnalisis() {
     const kPct = (konsumtifAmt / grandTotal) * 100;
     donut.style.background = `conic-gradient(var(--consumptive) 0% ${kPct}%, var(--non-consumptive) ${kPct}% 100%)`;
     legend.innerHTML = `
-      <div class="donut-legend-item"><span class="lbl"><span class="legend-dot" style="background:var(--consumptive)"></span>${dict.konsumtif}</span><span class="val">${fmtRp(konsumtifAmt)}</span></div>
-      <div class="donut-legend-item"><span class="lbl"><span class="legend-dot" style="background:var(--non-consumptive)"></span>${dict.nonkonsumtif}</span><span class="val">${fmtRp(nonKonsumtifAmt)}</span></div>`;
+      <div class="donut-legend-item">
+        <span class="lbl"><span class="legend-dot" style="background:var(--consumptive)"></span>${dict.konsumtif}</span>
+        <span class="val">${fmtRp(konsumtifAmt)}</span>
+      </div>
+      <div class="donut-legend-item">
+        <span class="lbl"><span class="legend-dot" style="background:var(--non-consumptive)"></span>${dict.nonkonsumtif}</span>
+        <span class="val">${fmtRp(nonKonsumtifAmt)}</span>
+      </div>`;
   }
 
   document.getElementById("lifestylePct").textContent = ratio.toFixed(1) + "%";
   document.getElementById("lifestyleBar").style.width = Math.min(ratio, 100) + "%";
   const statusEl = document.getElementById("lifestyleStatus");
   let tier, cls;
-  if (ratio < 20) { tier = dict.status_wise; cls = "ok"; }
-  else if (ratio <= 35) { tier = dict.status_warning; cls = "warn"; }
-  else { tier = dict.status_high; cls = "bad"; }
+  if (ratio < 20) { tier = dict.status_wise; cls = "ok"; document.getElementById("lifestyleBar").style.background = "var(--positive)"; }
+  else if (ratio <= 35) { tier = dict.status_warning; cls = "warn"; document.getElementById("lifestyleBar").style.background = "var(--warning)"; }
+  else { tier = dict.status_high; cls = "bad"; document.getElementById("lifestyleBar").style.background = "var(--negative)"; }
   statusEl.className = `status-pill ${cls}`;
   statusEl.textContent = tier;
 
   document.getElementById("lifestyleBreakdown").innerHTML = `
-    <div class="kv-row"><span class="k">${dict.total_income_lbl}</span><span class="v">${fmtRp(totalIncome)}</span></div>
-    <div class="kv-row"><span class="k">${dict.total_expense_lbl}</span><span class="v">${fmtRp(grandTotal)}</span></div>
-    <div class="kv-row"><span class="k">${dict.konsumtif_expense_lbl}</span><span class="v">${fmtRp(konsumtifAmt)}</span></div>`;
+    <div class="kv-row"><span class="k">${dict.total_income_lbl}</span><span class="v">${fmtRp(periodIncome)}</span></div>
+    <div class="kv-row"><span class="k">${dict.total_expense_lbl}</span><span class="v">${fmtRp(totalExpenseDash)}</span></div>
+    <div class="kv-row"><span class="k">${dict.konsumtif_expense_lbl}</span><span class="v">${fmtRp(konsumtifAmt)}</span></div>
+  `;
 
-  const rows = activeBudgetList.map(b => ({ ...b, actual: spentByCategory[b.code] || 0 })).filter(b => b.actual > 0).sort((a, b) => b.actual - a.actual);
+  const rows = state.budget
+    .map(b => ({ ...b, actual: spentByCategory[b.code] || 0 }))
+    .filter(b => b.actual > 0)
+    .sort((a, b) => b.actual - a.actual);
+
   const rankWrap = document.getElementById("categoryBreakdown");
   rankWrap.innerHTML = "";
   if (rows.length === 0) {
@@ -1326,33 +1441,137 @@ function renderAnalisis() {
       const el = document.createElement("div");
       el.className = "rank-row";
       el.innerHTML = `
-        <div class="rank-top"><span class="rank-name"><span class="rank-badge ${letter}">${letter}</span>${escapeHtml(r.name)}</span><span class="rank-amount">${fmtRp(r.actual)}</span></div>
-        <div class="rank-track"><div class="rank-fill ${letter}" style="width:${pct}%"></div></div>`;
+        <div class="rank-top">
+          <span class="rank-name"><span class="rank-badge ${letter}">${letter}</span>${escapeHtml(r.name)}</span>
+          <span class="rank-amount">${fmtRp(r.actual)}</span>
+        </div>
+        <div class="rank-track"><div class="rank-fill ${letter}" style="width:${pct}%"></div></div>
+      `;
       rankWrap.appendChild(el);
     });
   }
+
+  renderExtraIndicators(totalIncomeAllTime());
 }
 
-/* EXPORT & AUTH */
+function renderExtraIndicators(totalIncome) {
+  const dict = tr();
+  const wrap = document.getElementById("extraIndicators");
+  wrap.innerHTML = "";
+
+  const activeDebts = state.debts.filter(d => debtStatus(d) === "Aktif");
+  const totalMonthlyInstallment = activeDebts.reduce((s, d) => s + d.tagihanPerBulan, 0);
+  const incomeMonths = new Set(state.transactions.filter(t => t.type === "Pemasukan").map(t => t.date.slice(0, 7)));
+  const monthCount = Math.max(incomeMonths.size, 1);
+  const avgMonthlyIncome = totalIncome / monthCount;
+  const dsr = avgMonthlyIncome > 0 ? (totalMonthlyInstallment / avgMonthlyIncome) * 100 : 0;
+  let dsrTier, dsrCls;
+  if (dsr < 30) { dsrTier = dict.dsr_sehat; dsrCls = "ok"; }
+  else if (dsr <= 50) { dsrTier = dict.dsr_waspada; dsrCls = "warn"; }
+  else { dsrTier = dict.dsr_berisiko; dsrCls = "bad"; }
+  const dsrCard = document.createElement("div");
+  dsrCard.className = "indicator-card";
+  dsrCard.innerHTML = `
+    <div class="eyebrow">${dict.dsr_title}</div>
+    <div class="indicator-value ${dsrCls}">${dsr.toFixed(1)}% <span class="status-pill ${dsrCls}" style="margin:0 0 0 6px;padding:2px 8px;font-size:0.66rem;">${dsrTier}</span></div>
+    <div class="indicator-note">${dict.dsr_note}</div>`;
+  wrap.appendChild(dsrCard);
+
+  const soldInvestments = state.investments.filter(i => i.status === "Terjual");
+  const realizedPL = soldInvestments.reduce((s, i) => s + i.profitLoss, 0);
+  const plCls = realizedPL > 0 ? "ok" : realizedPL < 0 ? "bad" : "";
+  const plCard = document.createElement("div");
+  plCard.className = "indicator-card";
+  plCard.innerHTML = `
+    <div class="eyebrow">${dict.invest_realized_title}</div>
+    <div class="indicator-value ${plCls}">${realizedPL >= 0 ? "+" : ""}${fmtRp(realizedPL)}</div>
+    <div class="indicator-note">${dict.invest_realized_note} (${soldInvestments.length})</div>`;
+  wrap.appendChild(plCard);
+
+  const activeInvestCost = activeInvestmentsByKode().reduce((s, g) => s + g.modal, 0);
+  const totalAccountBalance = state.accounts.reduce((s, a) => s + a.balance, 0);
+  const totalAssets = totalAccountBalance + activeInvestCost;
+  const investRatio = totalAssets > 0 ? (activeInvestCost / totalAssets) * 100 : 0;
+  let investTier;
+  if (investRatio < 10) investTier = dict.invest_low;
+  else if (investRatio <= 30) investTier = dict.invest_moderate;
+  else investTier = dict.invest_aggressive;
+  const ratioCard = document.createElement("div");
+  ratioCard.className = "indicator-card";
+  ratioCard.innerHTML = `
+    <div class="eyebrow">${dict.invest_ratio_title}</div>
+    <div class="indicator-value">${investRatio.toFixed(1)}% <span class="status-pill ok" style="margin:0 0 0 6px;padding:2px 8px;font-size:0.66rem;">${investTier}</span></div>
+    <div class="indicator-note">${dict.invest_ratio_note}</div>`;
+  wrap.appendChild(ratioCard);
+}
+
+/* ---------------------------------------------------------------------- */
+/* Excel export                                                           */
+/* ---------------------------------------------------------------------- */
+function buildExportTables() {
+  return {
+    accounts: state.accounts.map(a => ({
+      account_id: a.id, account_name: a.name, initial_balance: a.initial, current_balance: a.balance,
+    })),
+    transactions: state.transactions.map(t => ({
+      transaction_id: t.id, date: t.date, type: t.type,
+      account_from: t.accountFrom, account_to: t.accountTo,
+      category_code: t.categoryCode, income_source: t.incomeSource || "",
+      amount: t.amount, notes: t.notes || "", debt_id: t.debtId || "",
+    })),
+    budget_categories: state.budget.map(b => ({
+      category_code: b.code, category_name: b.name, expense_type: b.type,
+      target_percent: b.targetPercent, target_amount: b.targetBudget,
+    })),
+    chart_of_accounts: state.chartOfAccounts.map(c => ({ account_code: c.code, account_name: c.name, account_type: c.jenis })),
+    debts: state.debts.map(d => ({
+      debt_id: d.id, source: d.source, start_date: d.startDate,
+      kewajiban_principal: d.kewajiban, admin_fee: d.admin, amount_received: d.diterima,
+      term_months: d.jangkaWaktu, monthly_installment: d.tagihanPerBulan,
+      total_interest_amount: d.totalBunga, total_interest_percent: d.persenBunga,
+      total_to_repay: totalToRepayForDebt(d), amount_paid: totalPaidForDebt(d.id),
+      amount_remaining: Math.max(totalToRepayForDebt(d) - totalPaidForDebt(d.id), 0),
+      status: debtStatus(d), notes: d.notes || "",
+    })),
+    investments: state.investments.map(i => ({
+      investment_id: i.id, type: i.jenis, code: i.kode,
+      buy_date: i.tanggalBeli, cost_amount: i.modal, status: i.status,
+      sell_date: i.tanggalJual || "", amount_received: i.nominalDiterima || "",
+      profit_loss: i.profitLoss === null ? "" : i.profitLoss,
+      profit_loss_percent: i.profitPct === null ? "" : i.profitPct,
+      notes: i.notes || "",
+    })),
+  };
+}
+
 function exportToExcel() {
-  if (typeof XLSX === "undefined") { alert("Library export Excel belum termuat."); return; }
+  if (typeof XLSX === "undefined") { alert(tr().export_lib_missing); return; }
+  const tables = buildExportTables();
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(state.accounts), "accounts");
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(state.transactions), "transactions");
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(state.categories), "budget_categories");
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(state.debts), "debts");
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(state.investments), "investments");
+  Object.keys(tables).forEach(sheetName => {
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(tables[sheetName]), sheetName);
+  });
   XLSX.writeFile(wb, `equilife-export-${todayISO()}.xlsx`);
 }
-function exportToJson() {
-  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
-  const dl = document.createElement('a');
-  dl.setAttribute("href", dataStr);
-  dl.setAttribute("download", `equilife_sync_${todayISO()}.json`);
-  document.body.appendChild(dl);
-  dl.click();
-  dl.remove();
+
+/* JSON export: same tables as Excel, but a format that's trivial for a
+   Node/Python script to read and push straight into MySQL — see the
+   sync-to-mysql.py sample in the README. Excel export above is kept as-is
+   for people who just want to open/inspect the data by hand. */
+function exportToJSON() {
+  const tables = buildExportTables();
+  const payload = { exported_at: new Date().toISOString(), user: currentUser ? currentUser.email : null, ...tables };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `equilife-export-${todayISO()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
+
 function renderEverything() {
   renderOverview();
   renderTransaksi();
@@ -1363,148 +1582,14 @@ function renderEverything() {
   if (currentView === "analisis") renderAnalisis();
   updateBalanceToggleLabel();
 }
+
 function applySidebarState() {
   document.getElementById("sidebar").classList.toggle("collapsed", !!state.sidebarCollapsed);
   document.getElementById("sidebarToggle").textContent = state.sidebarCollapsed ? "›" : "‹";
 }
 
-/* AUTHENTICATION LOGIC (Robust Mobile Fix) */
-function getRegisteredUsers() {
-  try { return JSON.parse(localStorage.getItem("equilife_users")) || []; } catch (e) { return []; }
-}
-function saveRegisteredUsers(users) {
-  localStorage.setItem("equilife_users", JSON.stringify(users));
-}
-
-function initAuth() {
-  const authScreen = document.getElementById("authScreen");
-  const appRoot = document.getElementById("appRoot");
-
-  const activeEmail = localStorage.getItem("equilife_logged_in_email");
-  const activeUser = localStorage.getItem("equilife_logged_in_user");
-
-  if (activeEmail && activeUser) {
-    authScreen.classList.add("hidden");
-    appRoot.classList.remove("hidden");
-    document.getElementById("userCardName").textContent = activeUser;
-    document.getElementById("userChip").textContent = activeUser.charAt(0).toUpperCase();
-    startApp();
-    return;
-  }
-
-  authScreen.classList.remove("hidden");
-  appRoot.classList.add("hidden");
-
-  document.querySelectorAll(".auth-tab").forEach(tab => {
-    tab.addEventListener("click", () => {
-      document.querySelectorAll(".auth-tab").forEach(t => t.classList.remove("active"));
-      tab.classList.add("active");
-      const target = tab.dataset.authTab;
-      document.getElementById("loginForm").classList.toggle("hidden", target !== "login");
-      document.getElementById("registerForm").classList.toggle("hidden", target !== "register");
-      document.getElementById("verifyForm").classList.add("hidden");
-    });
-  });
-
-  document.getElementById("loginForm").addEventListener("submit", (e) => {
-    e.preventDefault();
-    const email = document.getElementById("loginEmail").value.trim().toLowerCase();
-    const pass = document.getElementById("loginPassword").value;
-    const errEl = document.getElementById("loginError");
-
-    const users = getRegisteredUsers();
-    const found = users.find(u => u.email.toLowerCase() === email && u.password === pass);
-
-    if (found) {
-      if (!found.verified) {
-        errEl.textContent = "Akun belum diverifikasi.";
-        errEl.classList.remove("hidden");
-        return;
-      }
-      localStorage.setItem("equilife_logged_in_email", found.email);
-      localStorage.setItem("equilife_logged_in_user", found.fullName);
-
-      authScreen.classList.add("hidden");
-      appRoot.classList.remove("hidden");
-      document.getElementById("userCardName").textContent = found.fullName;
-      document.getElementById("userChip").textContent = found.fullName.charAt(0).toUpperCase();
-      startApp();
-    } else {
-      errEl.textContent = "Email atau kata sandi salah.";
-      errEl.classList.remove("hidden");
-    }
-  });
-
-  let pendingUser = null;
-  document.getElementById("registerForm").addEventListener("submit", (e) => {
-    e.preventDefault();
-    const fullName = document.getElementById("regFullName").value.trim();
-    const birthDate = document.getElementById("regBirthDate").value;
-    const birthPlace = document.getElementById("regBirthPlace").value.trim();
-    const email = document.getElementById("regEmail").value.trim().toLowerCase();
-    const password = document.getElementById("regPassword").value;
-    const errEl = document.getElementById("registerError");
-
-    const users = getRegisteredUsers();
-    if (users.some(u => u.email.toLowerCase() === email)) {
-      errEl.textContent = "Email sudah terdaftar.";
-      errEl.classList.remove("hidden");
-      return;
-    }
-
-    const verificationCode = String(Math.floor(100000 + Math.random() * 900000));
-    pendingUser = { fullName, birthDate, birthPlace, email, password, verificationCode, verified: false };
-
-    document.getElementById("registerForm").classList.add("hidden");
-    const verifyForm = document.getElementById("verifyForm");
-    verifyForm.classList.remove("hidden");
-    document.getElementById("verifyDesc").textContent = `Kode verifikasi dikirim ke ${email}.`;
-    const devCodeBox = document.getElementById("verifyDevCode");
-    devCodeBox.classList.remove("hidden");
-    devCodeBox.innerHTML = `Kode verifikasi Anda (Dev Mode): <strong>${verificationCode}</strong>`;
-  });
-
-  document.getElementById("verifyForm").addEventListener("submit", (e) => {
-    e.preventDefault();
-    const code = document.getElementById("verifyCode").value.trim();
-    const errEl = document.getElementById("verifyError");
-
-    if (pendingUser && code === pendingUser.verificationCode) {
-      pendingUser.verified = true;
-      const users = getRegisteredUsers();
-      users.push(pendingUser);
-      saveRegisteredUsers(users);
-
-      localStorage.setItem("equilife_logged_in_email", pendingUser.email);
-      localStorage.setItem("equilife_logged_in_user", pendingUser.fullName);
-
-      document.getElementById("authScreen").classList.add("hidden");
-      document.getElementById("appRoot").classList.remove("hidden");
-      document.getElementById("userCardName").textContent = pendingUser.fullName;
-      document.getElementById("userChip").textContent = pendingUser.fullName.charAt(0).toUpperCase();
-      startApp();
-    } else {
-      errEl.textContent = "Kode verifikasi salah.";
-      errEl.classList.remove("hidden");
-    }
-  });
-
-  const logoutBtn = document.getElementById("logoutBtn");
-  if (logoutBtn) {
-    logoutBtn.addEventListener("click", () => {
-      localStorage.removeItem("equilife_logged_in_email");
-      localStorage.removeItem("equilife_logged_in_user");
-      window.location.reload();
-    });
-  }
-}
-
-function startApp() {
-  state = loadState();
+function init() {
   applyI18n();
-  applySidebarState();
-  setView("overview");
-  renderEverything();
 
   document.getElementById("txDate").value = todayISO();
   document.getElementById("debtStartDate").value = todayISO();
@@ -1519,31 +1604,34 @@ function startApp() {
   attachRupiahMask(document.getElementById("invNominal"));
   attachRupiahMask(document.getElementById("invNominalTerima"));
 
-  document.querySelectorAll(".nav-item").forEach(btn => btn.addEventListener("click", () => setView(btn.dataset.view)));
-  document.querySelectorAll("[data-goto]").forEach(btn => btn.addEventListener("click", () => setView(btn.dataset.goto)));
+  document.querySelectorAll(".nav-item").forEach(btn => btn.addEventListener("click", () => { setView(btn.dataset.view); closeDrawer(); }));
+  document.querySelectorAll("[data-goto]").forEach(btn => btn.addEventListener("click", () => { setView(btn.dataset.goto); closeDrawer(); }));
 
   document.getElementById("sidebarToggle").addEventListener("click", () => {
     state.sidebarCollapsed = !state.sidebarCollapsed;
     saveState();
     applySidebarState();
   });
+  document.getElementById("hamburgerBtn").addEventListener("click", toggleDrawer);
+  document.getElementById("sidebarBackdrop").addEventListener("click", closeDrawer);
 
   document.getElementById("langToggle").addEventListener("click", () => {
-    state.lang = state.lang === "ID" ? "EN" : "ID";
-    saveState();
+    uiLang = uiLang === "ID" ? "EN" : "ID";
+    if (state) { state.lang = uiLang; saveState(); }
     applyI18n();
-    renderEverything();
+    if (state) renderEverything();
   });
 
   document.getElementById("exportExcelBtn").addEventListener("click", exportToExcel);
-  document.getElementById("exportJsonBtn").addEventListener("click", exportToJson);
+  document.getElementById("exportJsonBtn").addEventListener("click", exportToJSON);
 
   document.getElementById("resetDataBtn").addEventListener("click", () => {
     if (confirm(tr().reset_confirm)) {
-      localStorage.removeItem(getActiveStorageKey());
+      localStorage.removeItem(dataKeyForUser(currentUser.id));
       draftBudget = null;
       state = loadState();
       applyI18n();
+      applySidebarState();
       renderEverything();
     }
   });
@@ -1571,13 +1659,20 @@ function startApp() {
     renderEverything();
   });
 
+  document.getElementById("liabMonth").addEventListener("change", renderLiabilityPanel);
+  document.getElementById("liabYear").addEventListener("change", renderLiabilityPanel);
+  document.getElementById("liabSource").addEventListener("change", renderLiabilityPanel);
+  document.getElementById("ovMonth").addEventListener("change", renderOverview);
+  document.getElementById("ovYear").addEventListener("change", renderOverview);
+
   document.querySelectorAll("#txSectionGroup .pill").forEach(p => p.addEventListener("click", () => setTxSection(p.dataset.section)));
   document.querySelectorAll("#txTypeGroup .pill").forEach(p => p.addEventListener("click", () => { txType = p.dataset.type; applyTxTypeUI(); }));
-  document.getElementById("txPayMethod").addEventListener("change", applyTxTypeUI);
 
   const txAmount = document.getElementById("txAmount");
   const txAmountHint = document.getElementById("txAmountHint");
   txAmount.addEventListener("rupiahchange", () => { txAmountHint.textContent = fmtRp(rawNumber(txAmount)); });
+
+  document.getElementById("txCategory").addEventListener("change", updateDebtLinkVisibility);
 
   document.getElementById("txForm").addEventListener("submit", (e) => {
     e.preventDefault();
@@ -1587,31 +1682,23 @@ function startApp() {
     const accFrom = document.getElementById("txAccFrom").value;
     const accTo = document.getElementById("txAccTo").value;
     const category = document.getElementById("txCategory").value;
-    const payMethod = document.getElementById("txPayMethod").value;
-    const debtId = document.getElementById("txDebtLink").value;
-
-    let debtSourceLabel = "";
-    if (txType === "Pengeluaran" && payMethod === "paylater" && debtId) {
-      const d = state.debts.find(x => x.id === debtId);
-      if (d) debtSourceLabel = d.source;
-    }
+    const incomeSource = document.getElementById("txIncomeSource").value;
+    const debtLinkId = document.getElementById("txDebtLink").value;
 
     const tx = {
-      date, 
-      type: txType,
-      payMethod: txType === "Pengeluaran" ? payMethod : "account",
-      debtId: debtId || null,
-      debtSource: debtSourceLabel,
-      accountFrom: txType === "Pemasukan" ? "-" : (payMethod === "paylater" ? "-" : accFrom),
+      date, type: txType,
+      accountFrom: txType === "Pemasukan" ? "-" : accFrom,
       accountTo: txType === "Pengeluaran" ? "-" : accTo,
       categoryCode: txType === "Pengeluaran" ? category : "-",
-      amount, 
-      notes,
+      incomeSource: txType === "Pemasukan" ? incomeSource : "-",
+      debtId: (txType === "Pengeluaran" && category === DEBT_CATEGORY_CODE && debtLinkId) ? debtLinkId : null,
+      amount, notes,
     };
     addTransaction(tx);
     document.getElementById("txNotes").value = "";
     renderEverything();
-    flash(e.target.querySelector("button[type=submit]"), tr().saved_ok);
+    const submitBtn = e.target.querySelector("button[type=submit]");
+    if (submitBtn) flash(submitBtn, tr().saved_ok);
   });
 
   document.getElementById("closeEditModal").addEventListener("click", closeEditModal);
@@ -1633,14 +1720,15 @@ function startApp() {
     const willOpen = settingBody.classList.contains("hidden");
     settingBody.classList.toggle("hidden");
     chevron.textContent = willOpen ? "−" : "＋";
-    if (willOpen) { draftBudget = null; ensureDraftBudget(); renderBudgetSettings(); }
+    if (willOpen) { ensureDraftBudget(); renderBudgetSettings(); }
   });
   document.getElementById("saveBudgetBtn").addEventListener("click", () => {
     ensureDraftBudget();
-    const periodKey = getSelectedBudgetPeriodKey();
-    state.monthlyBudgets[periodKey] = JSON.parse(JSON.stringify(draftBudget));
+    state.budget = JSON.parse(JSON.stringify(draftBudget));
     saveState();
-    renderAnggaran();
+    const spent = renderBudgetMonitoring();
+    renderBudgetChart(spent);
+    renderTxFormOptions();
     flash(document.getElementById("saveBudgetBtn"), tr().saved_ok);
   });
 
@@ -1652,6 +1740,8 @@ function startApp() {
     });
   });
   document.getElementById("weekSelect").addEventListener("change", (e) => { selectedWeek = Number(e.target.value); renderAnalisis(); });
+  document.getElementById("anMonth").addEventListener("change", renderAnalisis);
+  document.getElementById("anYear").addEventListener("change", renderAnalisis);
 
   ["debtKewajiban", "debtAdmin", "debtJangka", "debtTagihan"].forEach(id => {
     document.getElementById(id).addEventListener("input", recalcDebtFormPreview);
@@ -1684,6 +1774,8 @@ function startApp() {
     recalcDebtFormPreview();
     renderDebtSection();
     renderOverview();
+    renderTxFormOptions();
+    if (currentView === "analisis") renderAnalisis();
     flash(e.target.querySelector("button[type=submit]"), tr().saved_ok);
   });
 
@@ -1723,6 +1815,7 @@ function startApp() {
     applyInvestTypeUI();
     renderInvestSection();
     renderOverview();
+    if (currentView === "analisis") renderAnalisis();
     flash(e.target.querySelector("button[type=submit]"), tr().saved_ok);
   });
 
@@ -1738,24 +1831,18 @@ function startApp() {
     const code = document.getElementById("catCode").value.trim() || nextCategoryCode(jenis);
     if (!name) { alert(dict.cat_name_required); return; }
 
-    const codeTaken = [...state.categories.map(b => b.code), ...state.chartOfAccounts.map(c => c.code)]
+    const codeTaken = [...state.budget.map(b => b.code), ...state.chartOfAccounts.map(c => c.code)]
       .some(c => c === code && c !== editingCatCode);
     if (codeTaken) { alert(dict.cat_code_exists); return; }
 
     if (editingCatCode !== null) {
-      state.categories = state.categories.filter(b => b.code !== editingCatCode);
+      state.budget = state.budget.filter(b => b.code !== editingCatCode);
       state.chartOfAccounts = state.chartOfAccounts.filter(c => c.code !== editingCatCode);
     }
 
     if (jenis === "Beban") {
       const konsumtif = document.getElementById("catKonsumtif").value;
-      state.categories.push({ code, name, type: konsumtif });
-      // Update juga ke seluruh monthlyBudgets yang ada agar kategori baru muncul
-      Object.keys(state.monthlyBudgets).forEach(k => {
-        if (!state.monthlyBudgets[k].some(item => item.code === code)) {
-          state.monthlyBudgets[k].push({ code, name, type: konsumtif, targetPercent: 0, targetBudget: 0 });
-        }
-      });
+      state.budget.push({ code, name, type: konsumtif, targetPercent: 0, targetBudget: 0 });
       draftBudget = null;
     } else {
       state.chartOfAccounts.push({ code, name, jenis });
@@ -1769,4 +1856,252 @@ function startApp() {
   applyCatFormAutoSuggest();
 }
 
-document.addEventListener("DOMContentLoaded", initAuth);
+/* ==========================================================================
+   AUTH — registration, login, email verification, session, per-user data
+   isolation. Everything is client-side (this is a static site with no
+   backend), so accounts live in localStorage on this browser/device only.
+   See the README for the honest security caveats and the optional EmailJS
+   setup for sending a real verification email.
+   ========================================================================== */
+const USERS_KEY = "equilife_users_v1";
+const SESSION_KEY = "equilife_session_v1";
+
+/* Fill these in with your own EmailJS account (emailjs.com, free tier)
+   to send a real verification email. Leave empty to fall back to an
+   on-screen "preview" of the code — the app still works fully either way. */
+const EMAILJS_CONFIG = { publicKey: "", serviceId: "", templateId: "" };
+
+let currentUser = null; /* { id, email, fullName, birthDate, birthPlace, passwordHash, verified, verifyCode, verifyCodeExpires, createdAt } */
+let pendingVerifyUserId = null;
+
+function loadUsers() {
+  try { return JSON.parse(localStorage.getItem(USERS_KEY)) || {}; } catch (e) { return {}; }
+}
+function saveUsers(users) {
+  try { localStorage.setItem(USERS_KEY, JSON.stringify(users)); } catch (e) { /* storage unavailable */ }
+}
+function findUserByEmail(email) {
+  const users = loadUsers();
+  return Object.values(users).find(u => u.email.toLowerCase() === email.toLowerCase()) || null;
+}
+
+/* SHA-256 via Web Crypto when available (any HTTPS site, incl. GitHub
+   Pages); falls back to a simple non-cryptographic hash for local file://
+   previews where crypto.subtle may be unavailable, so the app still runs. */
+async function hashText(text) {
+  if (window.crypto && window.crypto.subtle) {
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+  }
+  let h = 0;
+  for (let i = 0; i < text.length; i++) { h = ((h << 5) - h + text.charCodeAt(i)) | 0; }
+  return "fallback_" + Math.abs(h).toString(16);
+}
+
+function genVerifyCode() { return String(Math.floor(100000 + Math.random() * 900000)); }
+
+function sendVerificationEmail(user, code) {
+  const dict = tr();
+  const devBox = document.getElementById("verifyDevCode");
+  if (EMAILJS_CONFIG.publicKey && EMAILJS_CONFIG.serviceId && EMAILJS_CONFIG.templateId && window.emailjs) {
+    window.emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.templateId, {
+      to_email: user.email, to_name: user.fullName, verify_code: code,
+    }, EMAILJS_CONFIG.publicKey).catch(() => {
+      devBox.classList.remove("hidden");
+      devBox.textContent = dict.auth_email_failed(code);
+    });
+    devBox.classList.add("hidden");
+  } else {
+    /* No email service configured: static sites can't send real email on
+       their own, so show the code directly as a clearly-labelled preview. */
+    devBox.classList.remove("hidden");
+    devBox.textContent = dict.auth_dev_preview(code);
+  }
+}
+
+function showAuthError(elId, msg) {
+  const el = document.getElementById(elId);
+  el.textContent = msg;
+  el.classList.remove("hidden");
+}
+function clearAuthErrors() {
+  ["loginError", "registerError", "verifyError"].forEach(id => document.getElementById(id).classList.add("hidden"));
+}
+
+function setAuthTab(tab) {
+  clearAuthErrors();
+  document.querySelectorAll(".auth-tab").forEach(b => b.classList.toggle("active", b.dataset.authTab === tab));
+  document.getElementById("loginForm").classList.toggle("hidden", tab !== "login");
+  document.getElementById("registerForm").classList.toggle("hidden", tab !== "register");
+  document.getElementById("verifyForm").classList.add("hidden");
+}
+
+function showVerifyScreen(user) {
+  clearAuthErrors();
+  pendingVerifyUserId = user.id;
+  document.getElementById("loginForm").classList.add("hidden");
+  document.getElementById("registerForm").classList.add("hidden");
+  document.getElementById("verifyForm").classList.remove("hidden");
+  document.getElementById("verifyDesc").textContent = tr().auth_verify_desc(user.email);
+  document.getElementById("verifyDevCode").classList.add("hidden");
+  document.getElementById("verifyCode").value = "";
+}
+
+function closeDrawer() {
+  document.getElementById("sidebar").classList.remove("drawer-open");
+  document.getElementById("sidebarBackdrop").classList.remove("visible");
+  document.getElementById("hamburgerBtn").classList.remove("active");
+}
+function toggleDrawer() {
+  const open = document.getElementById("sidebar").classList.toggle("drawer-open");
+  document.getElementById("sidebarBackdrop").classList.toggle("visible", open);
+  document.getElementById("hamburgerBtn").classList.toggle("active", open);
+}
+
+function bootApp(user) {
+  currentUser = user;
+  try { localStorage.setItem(SESSION_KEY, user.id); } catch (e) { /* ignore */ }
+
+  document.getElementById("authScreen").classList.add("hidden");
+  document.getElementById("appRoot").classList.remove("hidden");
+
+  /* one-time convenience: if this browser has old pre-login data sitting
+     under the legacy single-user key, offer it to the very first user who
+     logs in on this device instead of silently discarding it. */
+  try {
+    const legacy = localStorage.getItem(STORAGE_KEY_LEGACY);
+    const alreadyHasOwnData = localStorage.getItem(dataKeyForUser(user.id));
+    if (legacy && !alreadyHasOwnData) {
+      localStorage.setItem(dataKeyForUser(user.id), legacy);
+      localStorage.removeItem(STORAGE_KEY_LEGACY);
+    }
+  } catch (e) { /* ignore */ }
+
+  state = loadState();
+  uiLang = state.lang;
+  document.getElementById("userChip").textContent = (user.fullName || user.email).charAt(0).toUpperCase();
+  document.getElementById("userCardName").textContent = user.fullName || user.email;
+  applyI18n();
+  applySidebarState();
+  setView("overview");
+  renderEverything();
+  applyCatFormAutoSuggest();
+}
+
+function logout() {
+  try { localStorage.removeItem(SESSION_KEY); } catch (e) { /* ignore */ }
+  currentUser = null;
+  state = null;
+  closeDrawer();
+  document.getElementById("appRoot").classList.add("hidden");
+  document.getElementById("authScreen").classList.remove("hidden");
+  document.getElementById("loginForm").reset();
+  setAuthTab("login");
+}
+
+function tryResumeSession() {
+  let sessionId = null;
+  try { sessionId = localStorage.getItem(SESSION_KEY); } catch (e) { /* ignore */ }
+  if (!sessionId) return false;
+  const users = loadUsers();
+  const user = users[sessionId];
+  if (!user || !user.verified) return false;
+  bootApp(user);
+  return true;
+}
+
+function initAuthUI() {
+  document.querySelectorAll(".auth-tab").forEach(b => b.addEventListener("click", () => setAuthTab(b.dataset.authTab)));
+
+  document.getElementById("loginForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    clearAuthErrors();
+    const dict = tr();
+    const email = document.getElementById("loginEmail").value.trim();
+    const password = document.getElementById("loginPassword").value;
+    const user = findUserByEmail(email);
+    if (!user) { showAuthError("loginError", dict.auth_err_not_found); return; }
+    const hash = await hashText(password);
+    if (hash !== user.passwordHash) { showAuthError("loginError", dict.auth_err_wrong_password); return; }
+    if (!user.verified) {
+      const code = genVerifyCode();
+      user.verifyCode = code;
+      user.verifyCodeExpires = Date.now() + 15 * 60 * 1000;
+      const users = loadUsers(); users[user.id] = user; saveUsers(users);
+      sendVerificationEmail(user, code);
+      showVerifyScreen(user);
+      return;
+    }
+    document.getElementById("loginForm").reset();
+    bootApp(user);
+  });
+
+  document.getElementById("registerForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    clearAuthErrors();
+    const dict = tr();
+    const fullName = document.getElementById("regFullName").value.trim();
+    const birthDate = document.getElementById("regBirthDate").value;
+    const birthPlace = document.getElementById("regBirthPlace").value.trim();
+    const email = document.getElementById("regEmail").value.trim();
+    const password = document.getElementById("regPassword").value;
+
+    if (findUserByEmail(email)) { showAuthError("registerError", dict.auth_err_email_taken); return; }
+    if (password.length < 6) { showAuthError("registerError", dict.auth_err_password_short); return; }
+
+    const id = "u_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    const passwordHash = await hashText(password);
+    const code = genVerifyCode();
+    const user = {
+      id, email, fullName, birthDate, birthPlace, passwordHash,
+      verified: false, verifyCode: code, verifyCodeExpires: Date.now() + 15 * 60 * 1000,
+      createdAt: new Date().toISOString(),
+    };
+    const users = loadUsers(); users[id] = user; saveUsers(users);
+    sendVerificationEmail(user, code);
+    document.getElementById("registerForm").reset();
+    showVerifyScreen(user);
+  });
+
+  document.getElementById("verifyForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    clearAuthErrors();
+    const dict = tr();
+    const users = loadUsers();
+    const user = users[pendingVerifyUserId];
+    if (!user) { showAuthError("verifyError", dict.auth_err_generic); return; }
+    const entered = document.getElementById("verifyCode").value.trim();
+    if (Date.now() > user.verifyCodeExpires) { showAuthError("verifyError", dict.auth_err_code_expired); return; }
+    if (entered !== user.verifyCode) { showAuthError("verifyError", dict.auth_err_code_wrong); return; }
+    user.verified = true;
+    delete user.verifyCode;
+    delete user.verifyCodeExpires;
+    users[user.id] = user;
+    saveUsers(users);
+    document.getElementById("verifyForm").reset();
+    bootApp(user);
+  });
+
+  document.getElementById("resendCodeBtn").addEventListener("click", () => {
+    const users = loadUsers();
+    const user = users[pendingVerifyUserId];
+    if (!user) return;
+    const code = genVerifyCode();
+    user.verifyCode = code;
+    user.verifyCodeExpires = Date.now() + 15 * 60 * 1000;
+    users[user.id] = user;
+    saveUsers(users);
+    sendVerificationEmail(user, code);
+  });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  initAuthUI();
+  init();
+  const resumed = tryResumeSession();
+  if (!resumed) {
+    document.getElementById("appRoot").classList.add("hidden");
+    document.getElementById("authScreen").classList.remove("hidden");
+  }
+  document.getElementById("logoutBtn").addEventListener("click", logout);
+});
