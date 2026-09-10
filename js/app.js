@@ -726,12 +726,19 @@ function renderTxFormOptions() {
   const accTo = document.getElementById("txAccTo");
   const cat = document.getElementById("txCategory");
   
-  [accFrom, accTo].forEach(sel => {
-    const prev = sel.value;
-    sel.innerHTML = state.accounts.map(a => `<option value="${escapeHtml(a.name)}">${escapeHtml(a.name)}</option>`).join("");
-    if (prev) sel.value = prev;
-  });
+  // Pastikan pilihan Source Account selalu menyertakan "Paylater" di dalamnya
+  const accountOptions = [...state.accounts.map(a => a.name), "Paylater"];
+  
+  const prevFrom = accFrom.value;
+  const prevTo = accTo.value;
+
+  accFrom.innerHTML = accountOptions.map(name => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join("");
+  if (prevFrom && accountOptions.includes(prevFrom)) accFrom.value = prevFrom;
+
+  accTo.innerHTML = state.accounts.map(a => `<option value="${escapeHtml(a.name)}">${escapeHtml(a.name)}</option>`).join("");
+  if (prevTo) accTo.value = prevTo;
   if (accTo.selectedIndex === 0 && state.accounts.length > 1) accTo.selectedIndex = 1;
+  
   cat.innerHTML = state.budget.map(b => `<option value="${b.code}">${b.code} — ${escapeHtml(b.name)}</option>`).join("");
 
   const debtLink = document.getElementById("txDebtLink");
@@ -1640,16 +1647,15 @@ function init() {
     const category = document.getElementById("txCategory").value;
     const debtLinkId = document.getElementById("txDebtLink").value;
 
-    // OTOMATIS CATAT SEBAGAI UTANG: 
-    // Jika tipe Pengeluaran dan sumber rekening (accFrom) atau keterangannya mengandung kata "Paylater" / "Utang"
-    if (txType === "Pengeluaran" && (accFrom.toLowerCase().includes("paylater") || accFrom.toLowerCase().includes("utang") || notes.toLowerCase().includes("paylater"))) {
+    // JIKA SUMBER AKUN (SOURCE ACCOUNT) ADALAH "PAYLATER"
+    if (txType === "Pengeluaran" && accFrom.toLowerCase() === "paylater") {
       state.debtCounter += 1;
       const autoDebtId = `DEBT-${String(state.debtCounter).padStart(3, "0")}`;
       
-      // Langsung masuk ke daftar utang (Debt & Loans) secara otomatis
+      // Otomatis masukkan ke daftar utang (Debt & Loans)
       state.debts.push({
         id: autoDebtId,
-        source: accFrom,
+        source: "Paylater",
         startDate: date,
         kewajiban: amount,
         admin: 0,
@@ -1659,7 +1665,7 @@ function init() {
         totalBunga: 0,
         persenBunga: 0,
         manualStatus: "Aktif",
-        notes: notes ? `Belanja: ${notes}` : `Pembelian via ${accFrom}`
+        notes: notes ? `Belanja Paylater: ${notes}` : "Pengeluaran via Paylater"
       });
     }
 
