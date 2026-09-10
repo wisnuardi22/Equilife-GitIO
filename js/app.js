@@ -733,20 +733,27 @@ function renderTxFormOptions() {
   let accountOptions = [];
   if (txType === "Pemasukan") {
     labelAccFrom.textContent = state.lang === "ID" ? "Sumber Pendapatan" : "Income Source";
-    accountOptions = ["Gaji", "Side Job", "Hutang", "Lainnya"];
+    // Menggunakan key terjemahan dinamis agar ikut bahasa
+    accountOptions = [
+      { val: "Gaji", label: dict.src_gaji },
+      { val: "Side Job", label: dict.src_sidejob },
+      { val: "Hutang", label: dict.src_hutang },
+      { val: "Lainnya", label: dict.src_lainnya }
+    ];
   } else if (txType === "Pengeluaran") {
     labelAccFrom.textContent = dict.acc_from;
-    accountOptions = [...state.accounts.map(a => a.name), "Paylater"];
+    accountOptions = [...state.accounts.map(a => ({ val: a.name, label: a.name })), { val: "Paylater", label: "Paylater" }];
   } else {
     labelAccFrom.textContent = dict.acc_from;
-    accountOptions = state.accounts.map(a => a.name);
+    accountOptions = state.accounts.map(a => ({ val: a.name, label: a.name }));
   }
 
   const prevFrom = accFrom.value;
   const prevTo = accTo.value;
 
-  accFrom.innerHTML = accountOptions.map(name => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join("");
-  if (prevFrom && accountOptions.includes(prevFrom)) accFrom.value = prevFrom;
+  // Render opsi dropdown dengan mendukung object label & value
+  accFrom.innerHTML = accountOptions.map(opt => `<option value="${escapeHtml(opt.val)}">${escapeHtml(opt.label)}</option>`).join("");
+  if (prevFrom && accountOptions.some(opt => opt.val === prevFrom)) accFrom.value = prevFrom;
 
   accTo.innerHTML = state.accounts.map(a => `<option value="${escapeHtml(a.name)}">${escapeHtml(a.name)}</option>`).join("");
   if (prevTo) accTo.value = prevTo;
