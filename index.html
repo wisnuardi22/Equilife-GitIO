@@ -270,24 +270,25 @@
               <label id="labelAccFrom" data-i18n="acc_from">Sumber Rekening</label>
               <select id="txAccFrom"></select>
             </div>
+            <!-- Metode Bayar untuk Pengeluaran (Rekening vs Paylater) -->
+            <div class="field hidden" id="fieldPayMethod">
+              <label data-i18n="pay_method">Metode Pembayaran</label>
+              <select id="txPayMethod">
+                <option value="account" data-i18n="pay_method_acc">Rekening / Dompet</option>
+                <option value="paylater" data-i18n="pay_method_paylater">Paylater (Hubungkan ke Utang)</option>
+              </select>
+            </div>
             <div class="field hidden" id="fieldAccTo">
               <label id="labelAccTo" data-i18n="acc_to">Rekening Tujuan</label>
               <select id="txAccTo"></select>
-            </div>
-            <div class="field hidden" id="fieldIncomeSource">
-              <label data-i18n="income_source">Sumber Pemasukan</label>
-              <select id="txIncomeSource">
-                <option value="Gaji Bulanan" data-i18n="income_src_salary">Gaji Bulanan</option>
-                <option value="Side Income" data-i18n="income_src_side">Side Income</option>
-                <option value="Penghasilan Lainnya" data-i18n="income_src_other">Penghasilan Lainnya</option>
-              </select>
             </div>
             <div class="field" id="fieldCategory">
               <label data-i18n="category">Kategori Pos Pengeluaran</label>
               <select id="txCategory"></select>
             </div>
+            <!-- Pilihan Utang / Paylater jika metode paylater dipilih -->
             <div class="field hidden" id="fieldDebtLink">
-              <label data-i18n="tx_debt_link">Bayar Utang Mana</label>
+              <label data-i18n="tx_debt_link">Pilih Akun Utang / Paylater</label>
               <select id="txDebtLink"></select>
             </div>
             <div class="field">
