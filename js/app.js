@@ -1640,11 +1640,15 @@ function init() {
     const category = document.getElementById("txCategory").value;
     const debtLinkId = document.getElementById("txDebtLink").value;
 
-    // Deteksi otomatis jika sumber akun atau catatan mengandung kata Paylater / Utang
+    // OTOMATIS CATAT SEBAGAI UTANG: 
+    // Jika tipe Pengeluaran dan sumber rekening (accFrom) atau keterangannya mengandung kata "Paylater" / "Utang"
     if (txType === "Pengeluaran" && (accFrom.toLowerCase().includes("paylater") || accFrom.toLowerCase().includes("utang") || notes.toLowerCase().includes("paylater"))) {
       state.debtCounter += 1;
+      const autoDebtId = `DEBT-${String(state.debtCounter).padStart(3, "0")}`;
+      
+      // Langsung masuk ke daftar utang (Debt & Loans) secara otomatis
       state.debts.push({
-        id: `DEBT-${String(state.debtCounter).padStart(3, "0")}`,
+        id: autoDebtId,
         source: accFrom,
         startDate: date,
         kewajiban: amount,
@@ -1655,7 +1659,7 @@ function init() {
         totalBunga: 0,
         persenBunga: 0,
         manualStatus: "Aktif",
-        notes: notes ? `Otomatis dari Pengeluaran: ${notes}` : "Pengeluaran Paylater"
+        notes: notes ? `Belanja: ${notes}` : `Pembelian via ${accFrom}`
       });
     }
 
@@ -1674,8 +1678,8 @@ function init() {
     renderEverything();
     const submitBtn = e.target.querySelector("button[type=submit]");
     if (submitBtn) flash(submitBtn, tr().saved_ok);
-  });s
-  
+  });
+
   document.getElementById("closeEditModal").addEventListener("click", closeEditModal);
   document.getElementById("editModal").addEventListener("click", (e) => { if (e.target.id === "editModal") closeEditModal(); });
   document.getElementById("editTxForm").addEventListener("submit", (e) => {
