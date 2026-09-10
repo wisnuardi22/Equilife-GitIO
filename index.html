@@ -86,14 +86,15 @@
     </form>
 
     <p class="auth-disclaimer" data-i18n="auth_disclaimer">
-      Data disimpan di browser berdasarkan akun login Anda.
+      Situs ini statis (GitHub Pages) — akun dan data disimpan di localStorage browser ini,
+      bukan di server. Jangan gunakan kata sandi yang juga kamu pakai di layanan lain.
     </p>
   </div>
 </div>
 
 <div class="app hidden" id="appRoot">
 
-  <!-- MOBILE TOP BAR -->
+  <!-- MOBILE TOP BAR (visible <=900px) -->
   <header class="mobile-topbar" id="mobileTopbar">
     <button id="hamburgerBtn" class="hamburger-btn" aria-label="Menu">
       <span></span><span></span><span></span>
@@ -140,10 +141,10 @@
 
     <div class="sidebar-footer">
       <button id="exportExcelBtn" class="btn-link nav-label" data-i18n="export_excel" title="Export ke Excel">⬇ Export Excel</button>
-      <button id="exportJsonBtn" class="btn-link nav-label" data-i18n="export_json" title="Export ke JSON">⬇ Export JSON</button>
+      <button id="exportJsonBtn" class="btn-link nav-label" data-i18n="export_json" title="Export ke JSON (untuk sinkronisasi MySQL)">⬇ Export JSON</button>
       <button id="langToggle" class="lang-toggle nav-label" title="Ganti bahasa">ID / EN</button>
     </div>
-    <button id="resetDataBtn" class="btn-link nav-label reset-link" data-i18n="reset_data">Reset data akun</button>
+    <button id="resetDataBtn" class="btn-link nav-label reset-link" data-i18n="reset_data">Reset data contoh</button>
   </aside>
 
   <!-- MAIN CONTENT -->
@@ -158,6 +159,7 @@
 
     <!-- ===================== OVERVIEW ===================== -->
     <section id="view-overview" class="view">
+
       <div class="section-row">
         <div class="eyebrow" data-i18n="total_balance">TOTAL SALDO</div>
         <button id="toggleBalance" class="btn-ghost small">Sembunyikan</button>
@@ -230,10 +232,12 @@
         </div>
         <div id="recentTxList" class="tx-list"></div>
       </div>
+
     </section>
 
     <!-- ===================== TRANSAKSI ===================== -->
     <section id="view-transaksi" class="view">
+
       <div class="pill-group" id="txSectionGroup">
         <button class="pill active" data-section="tx" data-i18n="sec_tx">Transaksi</button>
         <button class="pill" data-section="debt" data-i18n="sec_debt">Utang &amp; Cicilan</button>
@@ -241,7 +245,7 @@
         <button class="pill" data-section="category" data-i18n="sec_category">Kelola Kategori</button>
       </div>
 
-      <!-- sub: transaksi keuangan -->
+      <!-- ---- sub: transaksi keuangan ---- -->
       <div id="txSection-tx" class="tx-section active">
         <div class="panel">
           <div class="panel-header">
@@ -266,25 +270,24 @@
               <label id="labelAccFrom" data-i18n="acc_from">Sumber Rekening</label>
               <select id="txAccFrom"></select>
             </div>
-            <!-- Metode Bayar untuk Pengeluaran (Rekening vs Paylater) -->
-            <div class="field hidden" id="fieldPayMethod">
-              <label data-i18n="pay_method">Metode Pembayaran</label>
-              <select id="txPayMethod">
-                <option value="account" data-i18n="pay_method_acc">Rekening / Dompet</option>
-                <option value="paylater" data-i18n="pay_method_paylater">Paylater (Hubungkan ke Utang)</option>
-              </select>
-            </div>
             <div class="field hidden" id="fieldAccTo">
               <label id="labelAccTo" data-i18n="acc_to">Rekening Tujuan</label>
               <select id="txAccTo"></select>
+            </div>
+            <div class="field hidden" id="fieldIncomeSource">
+              <label data-i18n="income_source">Sumber Pemasukan</label>
+              <select id="txIncomeSource">
+                <option value="Gaji Bulanan" data-i18n="income_src_salary">Gaji Bulanan</option>
+                <option value="Side Income" data-i18n="income_src_side">Side Income</option>
+                <option value="Penghasilan Lainnya" data-i18n="income_src_other">Penghasilan Lainnya</option>
+              </select>
             </div>
             <div class="field" id="fieldCategory">
               <label data-i18n="category">Kategori Pos Pengeluaran</label>
               <select id="txCategory"></select>
             </div>
-            <!-- Pilihan Utang / Paylater jika metode paylater dipilih -->
             <div class="field hidden" id="fieldDebtLink">
-              <label data-i18n="tx_debt_link">Pilih Akun Utang / Paylater</label>
+              <label data-i18n="tx_debt_link">Bayar Utang Mana</label>
               <select id="txDebtLink"></select>
             </div>
             <div class="field">
@@ -313,7 +316,7 @@
         </div>
       </div>
 
-      <!-- sub: utang & cicilan -->
+      <!-- ---- sub: utang & cicilan ---- -->
       <div id="txSection-debt" class="tx-section">
         <div class="panel">
           <div class="panel-header">
@@ -384,7 +387,7 @@
         </div>
       </div>
 
-      <!-- sub: investasi -->
+      <!-- ---- sub: investasi ---- -->
       <div id="txSection-invest" class="tx-section">
         <div class="panel">
           <div class="panel-header">
@@ -449,19 +452,19 @@
         </div>
       </div>
 
-      <!-- sub: kelola kategori -->
+      <!-- ---- sub: kelola kategori ---- -->
       <div id="txSection-category" class="tx-section">
         <div class="panel">
           <div class="panel-header">
             <div>
               <h3 data-i18n="cat_title">Kelola Kategori / Akun</h3>
-              <p class="muted small" data-i18n="cat_desc">Ketik nama akun — sistem menyarankan jenis dan kode otomatis.</p>
+              <p class="muted small" data-i18n="cat_desc">Ketik nama akun — sistem menyarankan jenis dan kode otomatis (Harta/Utang/Modal/Pendapatan/Beban). Kategori berjenis Beban langsung tersedia di menu Anggaran.</p>
             </div>
           </div>
           <form id="catForm" class="grid-form">
             <div class="field field-wide">
               <label data-i18n="cat_name">Nama Akun / Kategori</label>
-              <input type="text" id="catName" placeholder="mis. Cicilan Motor, Tabungan Emas...">
+              <input type="text" id="catName" placeholder="mis. Cicilan Motor, Tabungan Emas, Bonus Tahunan...">
             </div>
             <div class="field">
               <label data-i18n="cat_jenis">Jenis (saran otomatis)</label>
@@ -509,24 +512,17 @@
           </div>
         </div>
       </div>
+
     </section>
 
     <!-- ===================== ANGGARAN ===================== -->
     <section id="view-anggaran" class="view">
-      <!-- Filter Bulan Anggaran -->
-      <div class="section-row" style="margin-bottom: 16px;">
-        <div class="eyebrow" data-i18n="budget_period_title">PERIODE ANGGARAN BULANAN</div>
-        <div class="filter-inline">
-          <select id="bgMonth"></select>
-          <select id="bgYear"></select>
-        </div>
-      </div>
 
       <div class="panel">
         <div class="panel-header" id="budgetSettingToggle" role="button">
           <div>
             <h3 data-i18n="setting_title">Target Anggaran &amp; Perhitungan Otomatis</h3>
-            <p class="muted small" data-i18n="setting_desc">Ubah nominal (Rp) atau persentase (%) untuk bulan ini</p>
+            <p class="muted small" data-i18n="setting_desc">Ubah nominal (Rp) atau persentase (%) — kolom satunya akan terhitung otomatis.</p>
           </div>
           <button class="btn-ghost small" id="budgetSettingChevron">＋</button>
         </div>
@@ -551,7 +547,7 @@
           <div class="callout" id="budgetTotalStatus"></div>
 
           <div class="field-actions">
-            <button class="btn-primary" id="saveBudgetBtn" data-i18n="save_setting">Simpan Perubahan Target Bulan Ini</button>
+            <button class="btn-primary" id="saveBudgetBtn" data-i18n="save_setting">Simpan Perubahan Target</button>
           </div>
         </div>
       </div>
@@ -559,8 +555,9 @@
       <div class="panel">
         <div class="panel-header">
           <h3 data-i18n="budget_vs_act">Monitoring Anggaran</h3>
-          <p class="muted small" id="budgetVsActSubtitle">Budget vs Realisasi bulan ini</p>
+          <p class="muted small" data-i18n="budget_vs_act_desc">Budget vs Realisasi bulan ini</p>
         </div>
+        <div class="callout" id="salaryBasisInfo"></div>
         <div class="table-wrap">
           <table class="data-table" id="budgetTable">
             <thead>
@@ -588,10 +585,12 @@
           <span class="legend-item"><i class="dot dot-actual"></i><span data-i18n="actual">Realisasi</span></span>
         </div>
       </div>
+
     </section>
 
     <!-- ===================== ANALISIS ===================== -->
     <section id="view-analisis" class="view">
+
       <div class="section-row">
         <div class="pill-group" id="periodGroup">
           <button class="pill active" data-period="monthly" data-i18n="monthly">Bulanan</button>
@@ -640,11 +639,12 @@
         <div class="panel-header">
           <div>
             <h3 data-i18n="extra_indicators_title">Indikator Kesehatan Keuangan</h3>
-            <p class="muted small" data-i18n="extra_indicators_desc">Kemampuan bayar utang dan alokasi investasi</p>
+            <p class="muted small" data-i18n="extra_indicators_desc">Kemampuan bayar utang dan alokasi investasi (acuan umum, bukan saran keuangan personal)</p>
           </div>
         </div>
         <div class="indicator-grid" id="extraIndicators"></div>
       </div>
+
     </section>
 
   </main>
