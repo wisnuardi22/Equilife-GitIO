@@ -1702,7 +1702,30 @@ function init() {
   });
   
   document.getElementById("saveBudgetBtn").addEventListener("click", () => {
-    ensureDraftBudget();
+    document.getElementById("saveBudgetBtn").addEventListener("click", () => {
+  const key = getSelectedBudgetPeriodKey();
+  
+  // 1. Simpan konfigurasi target khusus untuk bulan yang sedang dipilih
+  state.monthlyBudgets[key] = JSON.parse(JSON.stringify(draftBudget));
+  
+  // 2. Jadikan target bulan ini sebagai template utama (master)
+  // agar saat Anda mengecek bulan depan, targetnya otomatis mengikuti 
+  // nominal terakhir ini dan tidak kembali menjadi 0.
+  state.budget.forEach(masterRow => {
+    const draftRow = draftBudget.find(d => d.code === masterRow.code);
+    if (draftRow) {
+      masterRow.targetPercent = draftRow.targetPercent;
+      masterRow.targetBudget = draftRow.targetBudget;
+    }
+  });
+  
+  saveState();
+  
+  // 3. Perbarui langsung tampilan tabel dan grafik Monitoring
+  const data = renderBudgetMonitoring();
+  renderBudgetChart(data);
+  flash(document.getElementById("saveBudgetBtn"), tr().saved_ok);
+});
     const key = getSelectedBudgetPeriodKey();
     
     // 1. Simpan konfigurasi target khusus untuk bulan yang sedang dipilih
