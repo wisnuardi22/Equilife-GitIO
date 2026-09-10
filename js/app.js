@@ -726,9 +726,7 @@ function renderTxFormOptions() {
   const accTo = document.getElementById("txAccTo");
   const cat = document.getElementById("txCategory");
   
-  // Pastikan pilihan Source Account selalu menyertakan "Paylater" di dalamnya
   const accountOptions = [...state.accounts.map(a => a.name), "Paylater"];
-  
   const prevFrom = accFrom.value;
   const prevTo = accTo.value;
 
@@ -751,6 +749,7 @@ function renderTxFormOptions() {
   if ([...debtLink.options].some(o => o.value === prevDebtLink)) debtLink.value = prevDebtLink;
 
   updateDebtLinkVisibility();
+  updatePaylaterTenorVisibility();
 }
 
 function updateDebtLinkVisibility() {
@@ -760,11 +759,20 @@ function updateDebtLinkVisibility() {
   fieldDebtLink.classList.toggle("hidden", !show);
 }
 
+function updatePaylaterTenorVisibility() {
+  const accFromEl = document.getElementById("txAccFrom");
+  const fieldTenor = document.getElementById("fieldPaylaterTenor");
+  if (!accFromEl || !fieldTenor) return;
+  const isPaylater = accFromEl.value.toLowerCase() === "paylater";
+  fieldTenor.classList.toggle("hidden", !isPaylater || txType !== "Pengeluaran");
+}
+
 function applyTxTypeUI() {
   const dict = tr();
   document.querySelectorAll("#txTypeGroup .pill").forEach(p => p.classList.toggle("active", p.dataset.type === txType));
   
   const fieldAccFrom = document.getElementById("fieldAccFrom");
+  const fieldPaylaterTenor = document.getElementById("fieldPaylaterTenor");
   const fieldAccTo = document.getElementById("fieldAccTo");
   const fieldCategory = document.getElementById("fieldCategory");
   const labelAccTo = document.getElementById("labelAccTo");
@@ -773,13 +781,16 @@ function applyTxTypeUI() {
     fieldAccFrom.classList.remove("hidden");
     fieldAccTo.classList.add("hidden");
     fieldCategory.classList.remove("hidden");
+    updatePaylaterTenorVisibility();
   } else if (txType === "Pemasukan") {
-    fieldAccFrom.classList.add("hidden");    // Hapus total visual Source Account saat Income
+    fieldAccFrom.classList.add("hidden");
+    if (fieldPaylaterTenor) fieldPaylaterTenor.classList.add("hidden");
     fieldAccTo.classList.remove("hidden");
     fieldCategory.classList.add("hidden");
     labelAccTo.textContent = dict.acc_to;
   } else {
     fieldAccFrom.classList.remove("hidden");
+    if (fieldPaylaterTenor) fieldPaylaterTenor.classList.add("hidden");
     fieldAccTo.classList.remove("hidden");
     fieldCategory.classList.add("hidden");
   }
@@ -1636,6 +1647,7 @@ function init() {
   txAmount.addEventListener("rupiahchange", () => { txAmountHint.textContent = fmtRp(rawNumber(txAmount)); });
 
   document.getElementById("txCategory").addEventListener("change", updateDebtLinkVisibility);
+  document.getElementById("txAccFrom").addEventListener("change", updatePaylaterTenorVisibility);
 
   document.getElementById("txForm").addEventListener("submit", (e) => {
     e.preventDefault();
@@ -1647,17 +1659,14 @@ function init() {
     const category = document.getElementById("txCategory").value;
     const debtLinkId = document.getElementById("txDebtLink").value;
     
-    // Ambil pilihan tenor jika Paylater dipilih
     const tenorEl = document.getElementById("txPaylaterTenor");
     const jangkaWaktu = (accFrom.toLowerCase() === "paylater" && tenorEl) ? Number(tenorEl.value) || 1 : 1;
 
-    // JIKA SUMBER AKUN ADALAH PAYLATER
     if (txType === "Pengeluaran" && accFrom.toLowerCase() === "paylater") {
       state.debtCounter += 1;
       const autoDebtId = `DEBT-${String(state.debtCounter).padStart(3, "0")}`;
       const tagihanPerBulan = amount / jangkaWaktu;
       
-      // Masuk ke daftar utang dengan tenor pilihan
       state.debts.push({
         id: autoDebtId,
         source: "Paylater",
@@ -1691,7 +1700,7 @@ function init() {
     const submitBtn = e.target.querySelector("button[type=submit]");
     if (submitBtn) flash(submitBtn, tr().saved_ok);
   });
-  
+
   document.getElementById("closeEditModal").addEventListener("click", closeEditModal);
   document.getElementById("editModal").addEventListener("click", (e) => { if (e.target.id === "editModal") closeEditModal(); });
   document.getElementById("editTxForm").addEventListener("submit", (e) => {
@@ -2087,11 +2096,3 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   document.getElementById("logoutBtn").addEventListener("click", logout);
 });
-
-function updatePaylaterTenorVisibility() {
-  const accFrom = document.getElementById("txAccFrom").value;
-  const fieldTenor = document.getElementById("fieldPaylaterTenor");
-  if (fieldTenor) {
-    fieldTenor.classList.toggle("hidden", accFrom.toLowerCase() !== "paylater");
-  }
-}
