@@ -72,7 +72,7 @@
       <button type="submit" class="btn-primary" style="width:100%;" data-i18n="auth_register_btn">Daftar</button>
     </form>
 
-    <!-- EMAIL VERIFICATION -->
+    <!-- VERIFICATION -->
     <form id="verifyForm" class="auth-form hidden">
       <p class="muted small" id="verifyDesc"></p>
       <div class="field">
@@ -86,8 +86,7 @@
     </form>
 
     <p class="auth-disclaimer" data-i18n="auth_disclaimer">
-      Situs ini statis (GitHub Pages) — akun dan data disimpan di localStorage browser ini,
-      bukan di server. Jangan gunakan kata sandi yang juga kamu pakai di layanan lain.
+      Situs ini statis (GitHub Pages) — akun dan data disimpan di penyimpanan lokal browser Anda.
     </p>
   </div>
 </div>
@@ -139,8 +138,8 @@
     </div>
 
     <div class="sidebar-footer">
-      <button id="exportExcelBtn" class="btn-link nav-label" data-i18n="export_excel" title="Export ke Excel">⬇ Export Excel</button>
-      <button id="exportJsonBtn" class="btn-link nav-label" data-i18n="export_json" title="Export ke JSON (untuk sinkronisasi MySQL)">⬇ Export JSON</button>
+      <button id="exportExcelBtn" class="btn-link nav-label" data-i18n="export_excel" title="Export Excel">⬇ Export Excel</button>
+      <button id="exportJsonBtn" class="btn-link nav-label" data-i18n="export_json" title="Export JSON">⬇ Export JSON</button>
       <button id="langToggle" class="lang-toggle nav-label" title="Ganti bahasa">ID / EN</button>
     </div>
     <button id="resetDataBtn" class="btn-link nav-label reset-link" data-i18n="reset_data">Reset data contoh</button>
@@ -261,13 +260,13 @@
               <input type="date" id="txDate" required>
             </div>
             <div class="field" id="fieldAccFrom">
-              <label id="labelAccFrom" data-i18n="acc_from">Sumber Rekening</label>
+              <label id="labelAccFrom" data-i18n="acc_from">Sumber</label>
               <select id="txAccFrom"></select>
             </div>
             <div class="field hidden" id="fieldPaylaterTenor">
-              <label>Tenor Paylater (Bulan)</label>
+              <label data-i18n="tenor_label">Tenor Paylater (Bulan)</label>
               <select id="txPaylaterTenor">
-                <option value="1">1 Bulan (Bulanan Sekaligus)</option>
+                <option value="1">1 Bulan</option>
                 <option value="3">3 Bulan</option>
                 <option value="6">6 Bulan</option>
                 <option value="12">12 Bulan</option>
@@ -320,7 +319,7 @@
           </div>
           <form id="debtForm" class="grid-form">
             <div class="field">
-              <label data-i18n="debt_source">Utang Dimana</label>
+              <label data-i18n="debt_source">Sumber Utang</label>
               <select id="debtSource">
                 <option>Bank</option>
                 <option>SPinjam</option>
@@ -337,7 +336,7 @@
               <input type="text" inputmode="numeric" id="debtKewajiban" value="0">
             </div>
             <div class="field">
-              <label data-i18n="debt_admin">Admin (Biaya Admin)</label>
+              <label data-i18n="debt_admin">Biaya Admin</label>
               <input type="text" inputmode="numeric" id="debtAdmin" value="0">
             </div>
             <div class="field">
@@ -353,16 +352,16 @@
               <input type="text" inputmode="numeric" id="debtTagihan" value="0">
             </div>
             <div class="field">
-              <label data-i18n="debt_bunga_nominal">Total Nominal Bunga (otomatis)</label>
+              <label data-i18n="debt_bunga_nominal">Total Nominal Bunga</label>
               <span class="locked-value" id="debtBungaNominal">Rp 0</span>
             </div>
             <div class="field">
-              <label data-i18n="debt_bunga_persen">Persentase Bunga Total (otomatis)</label>
+              <label data-i18n="debt_bunga_persen">Persentase Bunga Total</label>
               <span class="locked-value" id="debtBungaPersen">0.00%</span>
             </div>
             <div class="field field-wide">
               <label data-i18n="notes">Keterangan</label>
-              <input type="text" id="debtNotes" placeholder="mis. Cicilan laptop, KTA renovasi...">
+              <input type="text" id="debtNotes" placeholder="mis. Cicilan laptop...">
             </div>
             <div class="field-actions field-wide">
               <button type="submit" class="btn-primary" data-i18n="debt_save">Simpan Utang</button>
@@ -406,7 +405,7 @@
             </div>
             <div class="field" id="fieldInvKode">
               <label data-i18n="invest_kode">Kode / Nama Investasi</label>
-              <input type="text" id="invKode" placeholder="mis. BBCA, BTC, Antam, SR012...">
+              <input type="text" id="invKode" placeholder="mis. BBCA, BTC...">
             </div>
             <div class="field hidden" id="fieldInvLot">
               <label data-i18n="invest_pilih_lot">Pilih Posisi Aktif</label>
@@ -446,16 +445,16 @@
           <div class="panel-header">
             <div>
               <h3 data-i18n="cat_title">Kelola Kategori / Akun</h3>
-              <p class="muted small" data-i18n="cat_desc">Ketik nama akun — sistem menyarankan jenis dan kode otomatis (Harta/Utang/Modal/Pendapatan/Beban). Kategori berjenis Beban langsung tersedia di menu Anggaran.</p>
+              <p class="muted small" data-i18n="cat_desc">Kelola daftar akun dan kategori anggaran Anda.</p>
             </div>
           </div>
           <form id="catForm" class="grid-form">
             <div class="field field-wide">
               <label data-i18n="cat_name">Nama Akun / Kategori</label>
-              <input type="text" id="catName" placeholder="mis. Cicilan Motor, Tabungan Emas, Bonus Tahunan...">
+              <input type="text" id="catName" placeholder="mis. Cicilan Motor...">
             </div>
             <div class="field">
-              <label data-i18n="cat_jenis">Jenis (saran otomatis)</label>
+              <label data-i18n="cat_jenis">Jenis</label>
               <select id="catJenis">
                 <option value="Harta" data-i18n="jenis_harta">Harta</option>
                 <option value="Utang" data-i18n="jenis_utang">Utang</option>
@@ -465,7 +464,7 @@
               </select>
             </div>
             <div class="field">
-              <label data-i18n="cat_code">Kode (saran otomatis)</label>
+              <label data-i18n="cat_code">Kode</label>
               <input type="text" id="catCode">
             </div>
             <div class="field" id="catKonsumtifWrap">
@@ -516,7 +515,7 @@
         <div class="panel-header" id="budgetSettingToggle" role="button">
           <div>
             <h3 data-i18n="setting_title">Target Anggaran &amp; Perhitungan Otomatis</h3>
-            <p class="muted small" data-i18n="setting_desc">Ubah nominal (Rp) atau persentase (%) — kolom satunya akan terhitung otomatis.</p>
+            <p class="muted small" data-i18n="setting_desc">Ubah nominal (Rp) atau persentase (%) target.</p>
           </div>
           <button class="btn-ghost small" id="budgetSettingChevron">＋</button>
         </div>
@@ -613,7 +612,7 @@
             <h3 data-i18n="lifestyle_ratio">Indikator Tingkat Konsumtif</h3>
           </div>
           <div class="lifestyle-figure" id="lifestylePct">0.0%</div>
-          <p class="muted small" data-i18n="from_income">dari pemasukan</p>
+          <p class="muted small" data-i18n="from_income">dari Gaji</p>
           <div class="progress-track">
             <div class="progress-fill" id="lifestyleBar"></div>
           </div>
@@ -633,7 +632,7 @@
         <div class="panel-header">
           <div>
             <h3 data-i18n="extra_indicators_title">Indikator Kesehatan Keuangan</h3>
-            <p class="muted small" data-i18n="extra_indicators_desc">Kemampuan bayar utang dan alokasi investasi (acuan umum, bukan saran keuangan personal)</p>
+            <p class="muted small" data-i18n="extra_indicators_desc">Kemampuan bayar utang dan alokasi investasi</p>
           </div>
         </div>
         <div class="indicator-grid" id="extraIndicators"></div>
