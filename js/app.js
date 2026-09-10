@@ -263,6 +263,7 @@ let state = null;
 let draftBudget = null;
 let currentView = "overview";
 let currentTxSection = "tx";
+let investType = "beli";
 
 function buildSeedState() {
   const accounts = [
@@ -919,8 +920,6 @@ function renderDebtSection() {
   }));
 }
 
-let investType = "beli";
-
 function applyInvestTypeUI() {
   const dict = tr();
   document.querySelectorAll("#investTypeGroup .pill").forEach(p => p.classList.toggle("active", p.dataset.invtype === investType));
@@ -1000,7 +999,6 @@ function renderInvestSection() {
   }));
 }
 
-let investType = "beli";
 function activeInvestmentLots() { return state.investments.filter(i => i.status === "Aktif"); }
 
 let catManualOverride = false;
