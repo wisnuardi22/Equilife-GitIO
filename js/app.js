@@ -1646,13 +1646,18 @@ function init() {
     const accTo = document.getElementById("txAccTo").value;
     const category = document.getElementById("txCategory").value;
     const debtLinkId = document.getElementById("txDebtLink").value;
+    
+    // Ambil pilihan tenor jika Paylater dipilih
+    const tenorEl = document.getElementById("txPaylaterTenor");
+    const jangkaWaktu = (accFrom.toLowerCase() === "paylater" && tenorEl) ? Number(tenorEl.value) || 1 : 1;
 
-    // JIKA SUMBER AKUN (SOURCE ACCOUNT) ADALAH "PAYLATER"
+    // JIKA SUMBER AKUN ADALAH PAYLATER
     if (txType === "Pengeluaran" && accFrom.toLowerCase() === "paylater") {
       state.debtCounter += 1;
       const autoDebtId = `DEBT-${String(state.debtCounter).padStart(3, "0")}`;
+      const tagihanPerBulan = amount / jangkaWaktu;
       
-      // Otomatis masukkan ke daftar utang (Debt & Loans)
+      // Masuk ke daftar utang dengan tenor pilihan
       state.debts.push({
         id: autoDebtId,
         source: "Paylater",
@@ -1660,12 +1665,12 @@ function init() {
         kewajiban: amount,
         admin: 0,
         diterima: amount,
-        jangkaWaktu: 1,
-        tagihanPerBulan: amount,
+        jangkaWaktu: jangkaWaktu,
+        tagihanPerBulan: tagihanPerBulan,
         totalBunga: 0,
         persenBunga: 0,
         manualStatus: "Aktif",
-        notes: notes ? `Belanja Paylater: ${notes}` : "Pengeluaran via Paylater"
+        notes: notes ? `Belanja Paylater (${jangkaWaktu} bln): ${notes}` : `Pengeluaran via Paylater (${jangkaWaktu} bln)`
       });
     }
 
@@ -1681,11 +1686,12 @@ function init() {
     
     addTransaction(tx);
     document.getElementById("txNotes").value = "";
+    if (tenorEl) tenorEl.value = "1";
     renderEverything();
     const submitBtn = e.target.querySelector("button[type=submit]");
     if (submitBtn) flash(submitBtn, tr().saved_ok);
   });
-
+  
   document.getElementById("closeEditModal").addEventListener("click", closeEditModal);
   document.getElementById("editModal").addEventListener("click", (e) => { if (e.target.id === "editModal") closeEditModal(); });
   document.getElementById("editTxForm").addEventListener("submit", (e) => {
@@ -2081,3 +2087,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   document.getElementById("logoutBtn").addEventListener("click", logout);
 });
+
+function updatePaylaterTenorVisibility() {
+  const accFrom = document.getElementById("txAccFrom").value;
+  const fieldTenor = document.getElementById("fieldPaylaterTenor");
+  if (fieldTenor) {
+    fieldTenor.classList.toggle("hidden", accFrom.toLowerCase() !== "paylater");
+  }
+}
