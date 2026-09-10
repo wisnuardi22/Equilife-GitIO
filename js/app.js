@@ -1640,10 +1640,14 @@ function init() {
     const category = document.getElementById("txCategory").value;
     const debtLinkId = document.getElementById("txDebtLink").value;
 
-    if (txType === "Pengeluaran" && (accFrom.toLowerCase().includes("paylater") || notes.toLowerCase().includes("paylater"))) {
+    // Jika transaksi adalah Pengeluaran dan sumber akun atau catatan mengandung kata "Paylater" / "Utang"
+    if (txType === "Pengeluaran" && (accFrom.toLowerCase().includes("paylater") || notes.toLowerCase().includes("paylater") || accFrom.toLowerCase().includes("utang"))) {
       state.debtCounter += 1;
+      const autoDebtId = `DEBT-${String(state.debtCounter).padStart(3, "0")}`;
+      
+      // Otomatis masukkan ke daftar utang (Debts)
       state.debts.push({
-        id: `DEBT-${String(state.debtCounter).padStart(3, "0")}`,
+        id: autoDebtId,
         source: accFrom,
         startDate: date,
         kewajiban: amount,
@@ -1667,6 +1671,7 @@ function init() {
       debtId: (txType === "Pengeluaran" && category === DEBT_CATEGORY_CODE && debtLinkId) ? debtLinkId : null,
       amount, notes,
     };
+    
     addTransaction(tx);
     document.getElementById("txNotes").value = "";
     renderEverything();
