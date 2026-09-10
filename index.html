@@ -13,7 +13,7 @@
 </head>
 <body>
 
-<!-- ===================== AUTH GATE (login / register) ===================== -->
+<!-- ===================== AUTH GATE ===================== -->
 <div id="authScreen" class="auth-screen">
   <div class="auth-card">
     <div class="auth-brand">
@@ -33,7 +33,7 @@
     <form id="loginForm" class="auth-form">
       <div class="field">
         <label data-i18n="auth_email">Email</label>
-        <input type="email" id="loginEmail" required autocomplete="username">
+        <input type="email" id="loginEmail" required autocomplete="username" autocapitalize="none" inputmode="email">
       </div>
       <div class="field">
         <label data-i18n="auth_password">Kata Sandi</label>
@@ -61,7 +61,7 @@
       </div>
       <div class="field">
         <label data-i18n="auth_email">Email</label>
-        <input type="email" id="regEmail" required autocomplete="username">
+        <input type="email" id="regEmail" required autocomplete="username" autocapitalize="none" inputmode="email">
       </div>
       <div class="field">
         <label data-i18n="auth_password">Kata Sandi</label>
@@ -94,7 +94,6 @@
 
 <div class="app hidden" id="appRoot">
 
-  <!-- MOBILE TOP BAR (visible <=900px) -->
   <header class="mobile-topbar" id="mobileTopbar">
     <button id="hamburgerBtn" class="hamburger-btn" aria-label="Menu">
       <span></span><span></span><span></span>
@@ -159,7 +158,6 @@
 
     <!-- ===================== OVERVIEW ===================== -->
     <section id="view-overview" class="view">
-
       <div class="section-row">
         <div class="eyebrow" data-i18n="total_balance">TOTAL SALDO</div>
         <button id="toggleBalance" class="btn-ghost small">Sembunyikan</button>
@@ -232,7 +230,6 @@
         </div>
         <div id="recentTxList" class="tx-list"></div>
       </div>
-
     </section>
 
     <!-- ===================== TRANSAKSI ===================== -->
@@ -245,7 +242,6 @@
         <button class="pill" data-section="category" data-i18n="sec_category">Kelola Kategori</button>
       </div>
 
-      <!-- ---- sub: transaksi keuangan ---- -->
       <div id="txSection-tx" class="tx-section active">
         <div class="panel">
           <div class="panel-header">
@@ -254,13 +250,11 @@
               <p class="muted small" data-i18n="add_tx_desc">Catat pemasukan, pengeluaran, atau transfer</p>
             </div>
           </div>
-
           <div class="pill-group" id="txTypeGroup">
             <button class="pill active" data-type="Pengeluaran" data-i18n="expense">Pengeluaran</button>
             <button class="pill" data-type="Pemasukan" data-i18n="income">Pemasukan</button>
             <button class="pill" data-type="Transfer" data-i18n="transfer">Transfer</button>
           </div>
-
           <form id="txForm" class="grid-form">
             <div class="field">
               <label data-i18n="date">Tanggal</label>
@@ -304,7 +298,6 @@
             </div>
           </form>
         </div>
-
         <div class="panel">
           <div class="panel-header">
             <div>
@@ -316,7 +309,6 @@
         </div>
       </div>
 
-      <!-- ---- sub: utang & cicilan ---- -->
       <div id="txSection-debt" class="tx-section">
         <div class="panel">
           <div class="panel-header">
@@ -387,7 +379,6 @@
         </div>
       </div>
 
-      <!-- ---- sub: investasi ---- -->
       <div id="txSection-invest" class="tx-section">
         <div class="panel">
           <div class="panel-header">
@@ -396,12 +387,10 @@
               <p class="muted small" data-i18n="invest_form_desc">Catat pembelian dan penjualan aset investasi</p>
             </div>
           </div>
-
           <div class="pill-group" id="investTypeGroup">
             <button class="pill active" data-invtype="beli" data-i18n="invest_buy">Beli</button>
             <button class="pill" data-invtype="jual" data-i18n="invest_sell">Jual</button>
           </div>
-
           <form id="investForm" class="grid-form">
             <div class="field" id="fieldInvJenis">
               <label data-i18n="invest_jenis">Jenis Investasi</label>
@@ -443,7 +432,6 @@
             </div>
           </form>
         </div>
-
         <div class="panel">
           <div class="panel-header">
             <h3 data-i18n="invest_list_title">Posisi Investasi</h3>
@@ -452,7 +440,6 @@
         </div>
       </div>
 
-      <!-- ---- sub: kelola kategori ---- -->
       <div id="txSection-category" class="tx-section">
         <div class="panel">
           <div class="panel-header">
@@ -512,11 +499,18 @@
           </div>
         </div>
       </div>
-
     </section>
 
     <!-- ===================== ANGGARAN ===================== -->
     <section id="view-anggaran" class="view">
+      <!-- FITUR BARU: Filter Bulan -->
+      <div class="section-row" style="margin-bottom: 16px;">
+        <div class="eyebrow" data-i18n="budget_period_title">PERIODE ANGGARAN BULANAN</div>
+        <div class="filter-inline">
+          <select id="bgMonth"></select>
+          <select id="bgYear"></select>
+        </div>
+      </div>
 
       <div class="panel">
         <div class="panel-header" id="budgetSettingToggle" role="button">

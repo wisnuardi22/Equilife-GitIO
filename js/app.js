@@ -3,7 +3,7 @@
    Static, client-side. Data persists in the browser via localStorage.
    ========================================================================== */
 
-const STORAGE_KEY_LEGACY = "equilife_data_v3"; /* pre-login single-user data, offered for migration on first login */
+const STORAGE_KEY_LEGACY = "equilife_data_v3";
 
 /* ---------------------------------------------------------------------- */
 /* i18n                                                                   */
@@ -39,9 +39,10 @@ const T = {
     sec_tx: "Transaksi", sec_debt: "Utang & Cicilan", sec_invest: "Investasi", sec_category: "Kelola Kategori",
     setting_title: "Target Anggaran & Perhitungan Otomatis",
     setting_desc: "Ubah nominal (Rp) atau persentase (%) — kolom satunya akan terhitung otomatis.",
+    budget_period_title: "PERIODE ANGGARAN BULANAN", /* NEW */
     code: "Kode", target_rp: "Target (Rp)", target_pct: "Target (%)",
     total_all: "TOTAL KESELURUHAN", save_setting: "Simpan Perubahan Target",
-    budget_vs_act: "Monitoring Anggaran", budget_vs_act_desc: "Budget vs Realisasi (seluruh transaksi)",
+    budget_vs_act: "Monitoring Anggaran", budget_vs_act_desc: "Budget vs Realisasi bulan terpilih",
     category_col: "Kategori", type_col: "Tipe", target: "Target", actual: "Realisasi", remaining: "Sisa", status: "Status",
     status_ok: "Terpenuhi", status_over: "Melampaui Batas",
     chart_title: "Visualisasi Budget vs Realisasi",
@@ -54,10 +55,10 @@ const T = {
     correct_title: "Koreksi Transaksi", save_changes: "Simpan Perubahan",
     no_tx: "Belum ada transaksi. Tambahkan transaksi pertamamu di menu Transaksi.",
     no_data_chart: "Belum ada data untuk ditampilkan.",
-    income_info: (v) => `Total pemasukan tercatat: <strong>${v}</strong>`,
+    income_info: (v) => `Total pemasukan tercatat pada periode ini: <strong>${v}</strong>`,
     no_income_warn: "Belum ada pemasukan tercatat. Tambahkan transaksi pemasukan agar target dapat dihitung otomatis.",
     salary_info: (v, m) => `Anggaran ini dihitung dari <strong>Gaji Bulanan${m ? " " + m : ""}: ${v}</strong> — Side Income dan Penghasilan Lainnya tidak dihitung sebagai dasar target anggaran.`,
-    no_salary_warn: "Belum ada transaksi Pemasukan dengan sumber \"Gaji Bulanan\". Tambahkan dulu agar target anggaran dapat dihitung otomatis.",
+    no_salary_warn: "Belum ada transaksi Pemasukan dengan sumber \"Gaji Bulanan\" pada bulan ini. Tambahkan dulu agar target dapat dihitung otomatis.",
     total_ok: "Total alokasi persentase sudah 100% — sempurna.",
     total_warn: (p) => `Total alokasi persentase saat ini ${p}% — idealnya mencapai 100%.`,
     reset_data: "Reset data contoh",
@@ -68,12 +69,10 @@ const T = {
     delete_cat_confirm: "Hapus kategori ini? Data realisasi lama tetap tersimpan namun tidak akan tampil di anggaran.",
     saved_ok: "Tersimpan ✓",
     konsumtif: "Konsumtif", nonkonsumtif: "Non-Konsumtif",
-    /* liability */
     liability_title: "Liability (Utang)", liability_desc: "Ringkasan pinjaman dan bunga berjalan",
     cashflow_title: "ARUS KAS", all_sources: "Semua Sumber",
     liab_total_loan: "Total Pokok Pinjaman Aktif", liab_total_interest: "Total Bunga Berjalan",
     no_debt: "Tidak ada utang aktif pada periode ini.",
-    /* debt form */
     debt_form_title: "Tambah Utang / Pinjaman", debt_form_desc: "Kewajiban, admin, dan bunga terhitung otomatis",
     debt_source: "Utang Dimana", debt_start: "Tanggal Mulai",
     debt_kewajiban: "Kewajiban (Pokok Pinjaman Awal)", debt_admin: "Admin (Biaya Admin)",
@@ -84,7 +83,6 @@ const T = {
     debt_aktif: "Aktif", debt_lunas: "Lunas", mark_paid: "Tandai Lunas", mark_active: "Tandai Aktif",
     tx_debt_link: "Bayar Utang Mana", debt_no_link: "- (Tidak terkait utang tertentu)",
     debt_remaining_short: "Sisa", debt_progress: (paid, total) => `Terbayar ${paid} dari ${total}`,
-    /* investment */
     invest_form_title: "Investasi", invest_form_desc: "Catat pembelian dan penjualan aset investasi",
     invest_buy: "Beli", invest_sell: "Jual",
     invest_jenis: "Jenis Investasi", invest_kode: "Kode / Nama Investasi",
@@ -95,8 +93,7 @@ const T = {
     invest_list_title: "Posisi Investasi", invest_active: "Investasi Aktif", invest_none_active: "Tidak ada posisi aktif untuk dijual.",
     no_invest: "Belum ada data investasi.",
     invest_summary: (n, v) => `${n} posisi aktif · total modal ${v}`,
-    /* category manager */
-    cat_title: "Kelola Kategori / Akun", cat_desc: "Ketik nama akun — sistem menyarankan jenis dan kode otomatis (Harta/Utang/Modal/Pendapatan/Beban). Kategori berjenis Beban langsung tersedia di menu Anggaran.",
+    cat_title: "Kelola Kategori / Akun", cat_desc: "Ketik nama akun — sistem menyarankan jenis dan kode otomatis. Kategori Beban akan tampil di menu Anggaran.",
     cat_name: "Nama Akun / Kategori", cat_jenis: "Jenis (saran otomatis)", cat_code: "Kode (saran otomatis)",
     cat_konsumtif_type: "Tipe (khusus Beban)", cat_add: "Tambah Kategori", cat_update: "Simpan Perubahan",
     cat_list_title: "Daftar Kategori / Akun",
@@ -104,7 +101,6 @@ const T = {
     edit: "Edit", delete: "Hapus",
     cat_name_required: "Nama kategori tidak boleh kosong.",
     cat_code_exists: "Kode ini sudah dipakai kategori lain, silakan ubah kodenya.",
-    /* analysis extra indicators */
     extra_indicators_title: "Indikator Kesehatan Keuangan",
     extra_indicators_desc: "Kemampuan bayar utang dan alokasi investasi (acuan umum, bukan saran keuangan personal)",
     dsr_title: "Rasio Cicilan terhadap Pemasukan (DSR)",
@@ -113,7 +109,7 @@ const T = {
     invest_realized_title: "Laba/Rugi Investasi Terealisasi",
     invest_realized_note: "Total selisih nominal diterima dan modal dari seluruh posisi yang sudah dijual.",
     invest_ratio_title: "Porsi Investasi dari Total Aset",
-    invest_ratio_note: "Total modal investasi aktif dibanding total aset (saldo rekening + investasi aktif). Acuan umum, bukan target baku.",
+    invest_ratio_note: "Total modal investasi aktif dibanding total aset. Acuan umum, bukan target baku.",
     invest_low: "Rendah", invest_moderate: "Moderat", invest_aggressive: "Agresif",
     nav_section_menu: "MENU", logout: "Keluar", export_excel: "⬇ Export Excel", export_json: "⬇ Export JSON",
     auth_login_tab: "Masuk", auth_register_tab: "Daftar",
@@ -121,17 +117,17 @@ const T = {
     auth_fullname: "Nama Lengkap", auth_birthdate: "Tanggal Lahir", auth_birthplace: "Kota Kelahiran",
     auth_password_hint: "Minimal 6 karakter", auth_register_btn: "Daftar",
     auth_verify_code: "Kode Verifikasi (6 digit)", auth_verify_btn: "Verifikasi & Masuk", auth_resend: "Kirim ulang kode",
-    auth_disclaimer: "Situs ini statis (GitHub Pages) — akun dan data disimpan di localStorage browser ini, bukan di server. Jangan gunakan kata sandi yang juga kamu pakai di layanan lain.",
-    auth_verify_desc: (email) => `Kami mengirim kode 6 digit ke <strong>${email}</strong>. Masukkan kodenya untuk menyelesaikan verifikasi.`,
-    auth_dev_preview: (code) => `Mode pratinjau (belum ada layanan email terhubung): kode verifikasi kamu adalah ${code}`,
-    auth_email_failed: (code) => `Pengiriman email gagal. Kode verifikasi kamu: ${code}`,
+    auth_disclaimer: "Situs ini statis (GitHub Pages) — akun dan data disimpan di browser ini.",
+    auth_verify_desc: (email) => `Kami mengirim kode ke <strong>${email}</strong>.`,
+    auth_dev_preview: (code) => `Mode pratinjau: kode verifikasi kamu adalah ${code}`,
+    auth_email_failed: (code) => `Pengiriman email gagal. Kode verifikasi: ${code}`,
     auth_err_not_found: "Email belum terdaftar. Silakan daftar dulu.",
     auth_err_wrong_password: "Kata sandi salah.",
     auth_err_email_taken: "Email ini sudah terdaftar. Silakan masuk.",
     auth_err_password_short: "Kata sandi minimal 6 karakter.",
-    auth_err_code_expired: "Kode verifikasi sudah kedaluwarsa. Klik \"Kirim ulang kode\".",
+    auth_err_code_expired: "Kode kedaluwarsa. Klik Kirim ulang.",
     auth_err_code_wrong: "Kode verifikasi salah.",
-    auth_err_generic: "Terjadi kesalahan. Silakan coba lagi.",
+    auth_err_generic: "Terjadi kesalahan.",
   },
   EN: {
     tagline: "Personal Financial Records",
@@ -163,9 +159,10 @@ const T = {
     sec_tx: "Transactions", sec_debt: "Debt & Loans", sec_invest: "Investments", sec_category: "Manage Categories",
     setting_title: "Budget Target & Live Calculation",
     setting_desc: "Change the amount (Rp) or percentage (%) — the other field updates automatically.",
+    budget_period_title: "MONTHLY BUDGET PERIOD",
     code: "Code", target_rp: "Target (Rp)", target_pct: "Target (%)",
     total_all: "OVERALL TOTAL", save_setting: "Save Target Changes",
-    budget_vs_act: "Budget Monitoring", budget_vs_act_desc: "Budget vs actual (all transactions)",
+    budget_vs_act: "Budget Monitoring", budget_vs_act_desc: "Budget vs actual for selected month",
     category_col: "Category", type_col: "Type", target: "Target", actual: "Actual", remaining: "Remaining", status: "Status",
     status_ok: "On Track", status_over: "Exceeded",
     chart_title: "Budget vs Actual Visualization",
@@ -176,20 +173,20 @@ const T = {
     total_income_lbl: "Total Income", total_expense_lbl: "Total Expense", konsumtif_expense_lbl: "Lifestyle Spending",
     category_detail: "Category Breakdown",
     correct_title: "Correct Transaction", save_changes: "Save Changes",
-    no_tx: "No transactions yet. Add your first one in the Transactions menu.",
+    no_tx: "No transactions yet.",
     no_data_chart: "Nothing to display yet.",
-    income_info: (v) => `Total recorded income: <strong>${v}</strong>`,
-    no_income_warn: "No income recorded yet. Add an income transaction so targets can be calculated automatically.",
-    salary_info: (v, m) => `This budget is calculated from <strong>Monthly Salary${m ? " " + m : ""}: ${v}</strong> — Side Income and Other Income are not counted toward the budget target basis.`,
-    no_salary_warn: "No income transaction with source \"Monthly Salary\" yet. Add one so budget targets can be calculated automatically.",
+    income_info: (v) => `Total recorded income this period: <strong>${v}</strong>`,
+    no_income_warn: "No income recorded yet.",
+    salary_info: (v, m) => `This budget is calculated from <strong>Monthly Salary${m ? " " + m : ""}: ${v}</strong>.`,
+    no_salary_warn: "No income transaction with source \"Monthly Salary\" yet this month.",
     total_ok: "Total allocation is 100% — perfect.",
     total_warn: (p) => `Current allocation total is ${p}% — ideally it should reach 100%.`,
     reset_data: "Reset sample data",
-    export_lib_missing: "The Excel export library hasn't loaded. Check your internet connection and try again.",
+    export_lib_missing: "The Excel export library hasn't loaded.",
     reset_confirm: "This will erase all data and restore the sample data. Continue?",
     delete_confirm: "Delete this transaction? The account balance will be restored.",
     delete_debt_confirm: "Delete this debt record?",
-    delete_cat_confirm: "Delete this category? Past realized data stays but won't show in the budget anymore.",
+    delete_cat_confirm: "Delete this category?",
     saved_ok: "Saved ✓",
     konsumtif: "Lifestyle", nonkonsumtif: "Essential",
     liability_title: "Liability (Debt)", liability_desc: "A summary of running loans and interest",
@@ -216,23 +213,23 @@ const T = {
     invest_list_title: "Investment Positions", invest_active: "Active Investments", invest_none_active: "No active position to sell.",
     no_invest: "No investment data yet.",
     invest_summary: (n, v) => `${n} active positions · total cost ${v}`,
-    cat_title: "Manage Categories / Accounts", cat_desc: "Type an account name — the system suggests a type and code automatically (Asset/Liability/Equity/Income/Expense). Expense-type entries are immediately available in the Budget menu.",
+    cat_title: "Manage Categories / Accounts", cat_desc: "Type an account name — system suggests a type and code automatically.",
     cat_name: "Account / Category Name", cat_jenis: "Type (auto-suggested)", cat_code: "Code (auto-suggested)",
     cat_konsumtif_type: "Type (Expense only)", cat_add: "Add Category", cat_update: "Save Changes",
     cat_list_title: "Category / Account List",
     jenis_harta: "Asset", jenis_utang: "Liability", jenis_modal: "Equity", jenis_pendapatan: "Income", jenis_beban: "Expense",
     edit: "Edit", delete: "Delete",
     cat_name_required: "Category name cannot be empty.",
-    cat_code_exists: "This code is already used by another category, please change it.",
+    cat_code_exists: "This code is already used.",
     extra_indicators_title: "Financial Health Indicators",
-    extra_indicators_desc: "Debt repayment capacity and investment allocation (general reference, not personal financial advice)",
+    extra_indicators_desc: "Debt repayment capacity and investment allocation.",
     dsr_title: "Debt Service Ratio (DSR)",
-    dsr_note: "Total monthly installments of active debt divided by average monthly income. General reference: <30% healthy, 30–50% caution, >50% risky.",
+    dsr_note: "Total monthly installments of active debt divided by average monthly income.",
     dsr_sehat: "Healthy", dsr_waspada: "Caution", dsr_berisiko: "Risky",
     invest_realized_title: "Realized Investment Profit/Loss",
     invest_realized_note: "Total difference between amount received and cost across all sold positions.",
     invest_ratio_title: "Investment Share of Total Assets",
-    invest_ratio_note: "Total active investment cost compared to total assets (account balances + active investments). General reference, not a strict target.",
+    invest_ratio_note: "Total active investment cost compared to total assets.",
     invest_low: "Low", invest_moderate: "Moderate", invest_aggressive: "Aggressive",
     nav_section_menu: "MENU", logout: "Log Out", export_excel: "⬇ Export Excel", export_json: "⬇ Export JSON",
     auth_login_tab: "Log In", auth_register_tab: "Sign Up",
@@ -240,23 +237,20 @@ const T = {
     auth_fullname: "Full Name", auth_birthdate: "Date of Birth", auth_birthplace: "City of Birth",
     auth_password_hint: "At least 6 characters", auth_register_btn: "Sign Up",
     auth_verify_code: "Verification Code (6 digits)", auth_verify_btn: "Verify & Log In", auth_resend: "Resend code",
-    auth_disclaimer: "This is a static site (GitHub Pages) — accounts and data are stored in this browser's localStorage, not on a server. Don't reuse a password from another service.",
-    auth_verify_desc: (email) => `We sent a 6-digit code to <strong>${email}</strong>. Enter it to finish verifying.`,
-    auth_dev_preview: (code) => `Preview mode (no email service connected yet): your verification code is ${code}`,
-    auth_email_failed: (code) => `Email sending failed. Your verification code: ${code}`,
-    auth_err_not_found: "Email not registered yet. Please sign up first.",
+    auth_disclaimer: "Data stored securely in local storage.",
+    auth_verify_desc: (email) => `Code sent to <strong>${email}</strong>.`,
+    auth_dev_preview: (code) => `Preview mode code: ${code}`,
+    auth_email_failed: (code) => `Email sending failed. Code: ${code}`,
+    auth_err_not_found: "Email not registered.",
     auth_err_wrong_password: "Incorrect password.",
-    auth_err_email_taken: "This email is already registered. Please log in.",
-    auth_err_password_short: "Password must be at least 6 characters.",
-    auth_err_code_expired: "Verification code expired. Click \"Resend code\".",
-    auth_err_code_wrong: "Incorrect verification code.",
-    auth_err_generic: "Something went wrong. Please try again.",
+    auth_err_email_taken: "Email already registered.",
+    auth_err_password_short: "Password must be >= 6 characters.",
+    auth_err_code_expired: "Code expired.",
+    auth_err_code_wrong: "Incorrect code.",
+    auth_err_generic: "Something went wrong.",
   }
 };
 
-/* ---------------------------------------------------------------------- */
-/* Chart-of-accounts auto-suggestion rules                                */
-/* ---------------------------------------------------------------------- */
 const COA_RULES = [
   { jenis: "Utang", prefix: "2", keywords: ["utang", "hutang", "pinjam", "kredit", "cicilan", "paylater", "pay later", "spinjam", "kta", "kartu kredit", "kpr", "debt", "loan"] },
   { jenis: "Modal", prefix: "3", keywords: ["modal", "ekuitas", "equity", "saldo awal"] },
@@ -270,9 +264,6 @@ function suggestJenis(name) {
 }
 const JENIS_PREFIX = { Harta: "1", Utang: "2", Modal: "3", Pendapatan: "4", Beban: "5" };
 
-/* ---------------------------------------------------------------------- */
-/* State + storage                                                        */
-/* ---------------------------------------------------------------------- */
 let state = null;
 let draftBudget = null;
 let currentView = "overview";
@@ -300,12 +291,13 @@ function buildSeedState() {
     { code: "1201", name: "Tabungan / Investasi", type: "Non-Konsumtif", targetPercent: 0, targetBudget: 0 },
   ];
 
-  const s = {
+  return {
     lang: "ID",
     showBalance: true,
     sidebarCollapsed: false,
     accounts,
     budget,
+    monthlyBudgets: {},
     transactions: [],
     debts: [],
     investments: [],
@@ -315,8 +307,6 @@ function buildSeedState() {
     debtCounter: 0,
     investCounter: 0,
   };
-
-  return s;
 }
 
 function calcDebtInterest(kewajiban, tagihanPerBulan, jangkaWaktu) {
@@ -330,21 +320,19 @@ function migrateState(s) {
   if (!s.debts) s.debts = [];
   if (!s.investments) s.investments = [];
   if (!s.chartOfAccounts) s.chartOfAccounts = [];
+  if (!s.monthlyBudgets) s.monthlyBudgets = {}; /* NEW: Format { "YYYY-MM": [budget arrays] } */
   if (s.debtCounter === undefined) s.debtCounter = s.debts.length;
   if (s.investCounter === undefined) s.investCounter = s.investments.length;
   return s;
 }
 
-/* Data is namespaced per logged-in user id, so each account's financial
-   data lives under its own localStorage key and is invisible to anyone
-   who logs in as a different user on the same browser. */
 function dataKeyForUser(userId) { return `equilife_data_v3__${userId}`; }
 
 function loadState() {
   try {
     const raw = localStorage.getItem(dataKeyForUser(currentUser.id));
     if (raw) return migrateState(JSON.parse(raw));
-  } catch (e) { /* ignore corrupt storage */ }
+  } catch (e) { }
   const seeded = buildSeedState();
   persist(seeded);
   return seeded;
@@ -352,13 +340,10 @@ function loadState() {
 
 function persist(s) {
   if (!currentUser) return;
-  try { localStorage.setItem(dataKeyForUser(currentUser.id), JSON.stringify(s)); } catch (e) { /* storage unavailable */ }
+  try { localStorage.setItem(dataKeyForUser(currentUser.id), JSON.stringify(s)); } catch (e) { }
 }
 function saveState() { persist(state); }
 
-/* ---------------------------------------------------------------------- */
-/* Balance logic                                                          */
-/* ---------------------------------------------------------------------- */
 function findAccount(s, name) { return s.accounts.find(a => a.name === name); }
 
 function applyTxEffect(s, tx, sign) {
@@ -401,10 +386,7 @@ function addAccount(name, initialBalance) {
   saveState();
 }
 
-/* ---------------------------------------------------------------------- */
-/* Utilities                                                              */
-/* ---------------------------------------------------------------------- */
-let uiLang = "ID"; /* language selector must work before login, when `state` doesn't exist yet */
+let uiLang = "ID";
 function tr() { return T[state && state.lang ? state.lang : uiLang]; }
 
 function fmtRp(n) {
@@ -484,9 +466,6 @@ function setRupiahValue(el, n) {
   el.value = n ? Number(Math.round(n)).toLocaleString("id-ID") : "0";
 }
 
-/* ---------------------------------------------------------------------- */
-/* i18n application                                                       */
-/* ---------------------------------------------------------------------- */
 function applyI18n() {
   const dict = tr();
   document.querySelectorAll("[data-i18n]").forEach(el => {
@@ -508,9 +487,6 @@ function updatePageHeader() {
   document.getElementById("pageSubtitle").textContent = subs[currentView];
 }
 
-/* ---------------------------------------------------------------------- */
-/* Navigation                                                             */
-/* ---------------------------------------------------------------------- */
 function setView(name) {
   currentView = name;
   document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
@@ -533,9 +509,6 @@ function setTxSection(name) {
   if (name === "category") renderCategorySection();
 }
 
-/* ---------------------------------------------------------------------- */
-/* OVERVIEW                                                               */
-/* ---------------------------------------------------------------------- */
 function activeInvestmentsByKode() {
   const map = {};
   state.investments.filter(i => i.status === "Aktif").forEach(i => {
@@ -580,7 +553,6 @@ function renderOverview() {
   document.getElementById("investSummaryLine").textContent =
     invGroups.length ? (state.showBalance ? dict.invest_summary(invGroups.length, fmtRp(investTotal)) : dict.invest_summary(invGroups.length, "Rp ••••••")) : "";
 
-  /* cashflow month/year filter */
   const ovMonthSel = document.getElementById("ovMonth");
   const ovYearSel = document.getElementById("ovYear");
   if (!ovMonthSel.dataset.bound) {
@@ -621,7 +593,7 @@ function debtStatus(debt) {
   return todayISO() <= end ? "Aktif" : "Lunas";
 }
 
-const DEBT_CATEGORY_CODE = "5104"; /* "Bayar Utang / Cicilan" — the expense category that can be linked to a specific debt */
+const DEBT_CATEGORY_CODE = "5104";
 function totalToRepayForDebt(debt) { return debt.tagihanPerBulan * debt.jangkaWaktu; }
 function totalPaidForDebt(debtId) {
   return state.transactions
@@ -637,8 +609,6 @@ function populateMonthYearSelect(monthSel, yearSel) {
   monthSel.innerHTML = names.map((n, i) => `<option value="${i + 1}">${n}</option>`).join("");
   monthSel.value = prevMonth;
 
-  /* broad, generous year range: several years back/forward from today, plus
-     any actual data years so old records are always reachable */
   const years = new Set();
   for (let y = now.getFullYear() - 6; y <= now.getFullYear() + 2; y++) years.add(y);
   state.debts.forEach(d => years.add(parseISO(d.startDate).getFullYear()));
@@ -668,20 +638,15 @@ function renderLiabilityPanel() {
   } else if (!monthSel.value) {
     populateMonthYearSelect(monthSel, yearSel);
   }
-  populateLiabSourceSelect(sourceSel); /* refresh options in case sources changed, keeps selection if still valid */
+  populateLiabSourceSelect(sourceSel);
   const month = Number(monthSel.value) || (new Date().getMonth() + 1);
   const year = Number(yearSel.value) || new Date().getFullYear();
   const periodStart = `${year}-${String(month).padStart(2, "0")}-01`;
   const sourceFilter = sourceSel.value || "__all";
 
-  const periodEndExclusive = addMonthsToISO(periodStart, 1); /* first day of the following month */
+  const periodEndExclusive = addMonthsToISO(periodStart, 1);
   const debtsInPeriod = state.debts.filter(d => {
     const end = addMonthsToISO(d.startDate, d.jangkaWaktu);
-    /* overlap check: the loan's active range [startDate, end] intersects
-       the selected month's range [periodStart, periodEndExclusive) —
-       previously this required startDate to fall on/before the 1st of the
-       month, which wrongly hid loans that started mid-month from their
-       own starting month. */
     const inPeriod = d.startDate < periodEndExclusive && periodStart <= end;
     const sourceMatch = sourceFilter === "__all" || d.source === sourceFilter;
     return inPeriod && sourceMatch;
@@ -768,9 +733,6 @@ function incomeSourceLabel(src) {
   return src || dict.income_src_other;
 }
 
-/* ---------------------------------------------------------------------- */
-/* TRANSAKSI                                                              */
-/* ---------------------------------------------------------------------- */
 let txType = "Pengeluaran";
 
 function renderTxFormOptions() {
@@ -870,9 +832,6 @@ function openEditModal(id) {
 }
 function closeEditModal() { document.getElementById("editModal").classList.add("hidden"); }
 
-/* ---------------------------------------------------------------------- */
-/* DEBT / LOANS                                                           */
-/* ---------------------------------------------------------------------- */
 function recalcDebtFormPreview() {
   const kewajiban = rawNumber(document.getElementById("debtKewajiban"));
   const admin = rawNumber(document.getElementById("debtAdmin"));
@@ -946,12 +905,7 @@ function renderDebtSection() {
   }));
 }
 
-/* ---------------------------------------------------------------------- */
-/* INVESTMENTS                                                            */
-/* ---------------------------------------------------------------------- */
 let investType = "beli";
-
-function activeInvestmentLots() { return state.investments.filter(i => i.status === "Aktif"); }
 
 function applyInvestTypeUI() {
   const dict = tr();
@@ -1032,9 +986,6 @@ function renderInvestSection() {
   }));
 }
 
-/* ---------------------------------------------------------------------- */
-/* CATEGORY / CHART OF ACCOUNTS                                           */
-/* ---------------------------------------------------------------------- */
 let catManualOverride = false;
 let editingCatCode = null;
 
@@ -1132,38 +1083,70 @@ function deleteCategory(code, source) {
 }
 
 /* ---------------------------------------------------------------------- */
-/* ANGGARAN                                                               */
+/* ANGGARAN (NEW: Filter Bulan Terintegrasi)                              */
 /* ---------------------------------------------------------------------- */
+function populateBudgetMonthYear() {
+  const mSel = document.getElementById("bgMonth");
+  const ySel = document.getElementById("bgYear");
+  if (!mSel.dataset.bound) {
+    populateMonthYearSelect(mSel, ySel);
+    mSel.dataset.bound = "1";
+    mSel.addEventListener("change", renderAnggaran);
+    ySel.addEventListener("change", renderAnggaran);
+  } else if (!mSel.value) {
+    populateMonthYearSelect(mSel, ySel);
+  }
+}
+
+function getSelectedBudgetPeriodKey() {
+  const m = String(document.getElementById("bgMonth").value || (new Date().getMonth() + 1)).padStart(2, "0");
+  const y = String(document.getElementById("bgYear").value || new Date().getFullYear());
+  return `${y}-${m}`;
+}
+
+function getActiveMonthBudgetList() {
+  const key = getSelectedBudgetPeriodKey();
+  if (!state.monthlyBudgets[key]) {
+    state.monthlyBudgets[key] = JSON.parse(JSON.stringify(state.budget));
+  }
+  const list = state.monthlyBudgets[key];
+  state.budget.forEach(masterCat => {
+    if (!list.find(l => l.code === masterCat.code)) {
+      list.push({...masterCat, targetPercent: 0, targetBudget: 0});
+    }
+  });
+  const validCodes = state.budget.map(b => b.code);
+  state.monthlyBudgets[key] = list.filter(l => validCodes.includes(l.code));
+  return state.monthlyBudgets[key];
+}
+
+function ensureDraftBudget() {
+  const activeList = getActiveMonthBudgetList();
+  draftBudget = JSON.parse(JSON.stringify(activeList));
+}
+
 function totalIncomeAllTime() {
   return state.transactions.filter(t => t.type === "Pemasukan").reduce((s, t) => s + t.amount, 0);
 }
 
-/* Budget targets are based on monthly salary only (Gaji Bulanan), not side
-   income or other income sources. Uses this calendar month's salary if any
-   has been logged, otherwise falls back to the most recent month that has
-   a salary entry, so budgeting keeps working even before this month's
-   payday is recorded. */
-function monthlySalaryBasis() {
+function monthlySalaryBasis(year, month) {
   const gajiTx = state.transactions.filter(t => t.type === "Pemasukan" && t.incomeSource === "Gaji Bulanan");
   if (gajiTx.length === 0) return { amount: 0, monthKey: null };
   const byMonth = {};
   gajiTx.forEach(t => { const k = t.date.slice(0, 7); byMonth[k] = (byMonth[k] || 0) + t.amount; });
-  const thisMonthKey = todayISO().slice(0, 7);
-  if (byMonth[thisMonthKey] !== undefined) return { amount: byMonth[thisMonthKey], monthKey: thisMonthKey };
+  const targetKey = `${year}-${String(month).padStart(2, "0")}`;
+  if (byMonth[targetKey] !== undefined) return { amount: byMonth[targetKey], monthKey: targetKey };
   const latestKey = Object.keys(byMonth).sort().pop();
   return { amount: byMonth[latestKey], monthKey: latestKey };
-}
-
-function ensureDraftBudget() {
-  if (!draftBudget || draftBudget.length !== state.budget.length) {
-    draftBudget = JSON.parse(JSON.stringify(state.budget));
-  }
 }
 
 function renderBudgetSettings() {
   const dict = tr();
   ensureDraftBudget();
-  const salary = monthlySalaryBasis();
+  
+  const m = Number(document.getElementById("bgMonth").value || (new Date().getMonth() + 1));
+  const y = Number(document.getElementById("bgYear").value || new Date().getFullYear());
+  const salary = monthlySalaryBasis(y, m);
   const income = salary.amount;
 
   const infoBox = document.getElementById("incomeInfo");
@@ -1242,11 +1225,19 @@ function updateBudgetTotals() {
 function renderBudgetMonitoring() {
   const dict = tr();
   const spentByCategory = {};
-  state.transactions.filter(t => t.type === "Pengeluaran").forEach(t => {
+  
+  const m = Number(document.getElementById("bgMonth").value || (new Date().getMonth() + 1));
+  const y = Number(document.getElementById("bgYear").value || new Date().getFullYear());
+
+  state.transactions.filter(t => {
+    if (t.type !== "Pengeluaran") return false;
+    const d = parseISO(t.date);
+    return d.getFullYear() === y && d.getMonth() + 1 === m;
+  }).forEach(t => {
     spentByCategory[t.categoryCode] = (spentByCategory[t.categoryCode] || 0) + t.amount;
   });
 
-  const salary = monthlySalaryBasis();
+  const salary = monthlySalaryBasis(y, m);
   const salaryBox = document.getElementById("salaryBasisInfo");
   if (salary.amount > 0) {
     salaryBox.className = "callout ok";
@@ -1258,7 +1249,9 @@ function renderBudgetMonitoring() {
 
   const tbody = document.getElementById("budgetTableBody");
   tbody.innerHTML = "";
-  state.budget.forEach(row => {
+  const activeList = getActiveMonthBudgetList();
+  
+  activeList.forEach(row => {
     const actual = spentByCategory[row.code] || 0;
     const remaining = row.targetBudget - actual;
     const ok = actual <= row.targetBudget;
@@ -1274,14 +1267,14 @@ function renderBudgetMonitoring() {
     tbody.appendChild(tr_);
   });
 
-  return spentByCategory;
+  return { spentByCategory, activeList };
 }
 
-function renderBudgetChart(spentByCategory) {
+function renderBudgetChart(data) {
   const chart = document.getElementById("budgetChart");
   chart.innerHTML = "";
 
-  const maxVal = niceCeil(Math.max(...state.budget.map(r => Math.max(r.targetBudget, spentByCategory[r.code] || 0)), 1));
+  const maxVal = niceCeil(Math.max(...data.activeList.map(r => Math.max(r.targetBudget, data.spentByCategory[r.code] || 0)), 1));
   const gridWrap = document.createElement("div");
   gridWrap.className = "gridlines";
   const steps = 4;
@@ -1295,8 +1288,8 @@ function renderBudgetChart(spentByCategory) {
   }
   chart.appendChild(gridWrap);
 
-  state.budget.forEach(row => {
-    const actual = spentByCategory[row.code] || 0;
+  data.activeList.forEach(row => {
+    const actual = data.spentByCategory[row.code] || 0;
     const col = document.createElement("div");
     col.className = "chart-col";
     const tH = maxVal > 0 ? (row.targetBudget / maxVal) * 100 : 0;
@@ -1313,19 +1306,18 @@ function renderBudgetChart(spentByCategory) {
 }
 
 function renderAnggaran() {
+  populateBudgetMonthYear();
   renderBudgetSettings();
-  const spent = renderBudgetMonitoring();
-  renderBudgetChart(spent);
+  const data = renderBudgetMonitoring();
+  renderBudgetChart(data);
 }
 
 /* ---------------------------------------------------------------------- */
 /* ANALISIS                                                               */
 /* ---------------------------------------------------------------------- */
 let period = "monthly";
-let selectedWeek = null; /* 1-4, week-of-month bucket, only used when period === "weekly" */
+let selectedWeek = null; 
 
-/* Splits a month into 4 fixed buckets: 1-7, 8-14, 15-21, 22-end. Simple and
-   predictable, avoids a ragged 5th week at month boundaries. */
 function weekOfMonthBucket(iso) {
   const day = parseISO(iso).getDate();
   if (day <= 7) return 1;
@@ -1336,7 +1328,6 @@ function weekOfMonthBucket(iso) {
 
 function renderAnalisis() {
   const dict = tr();
-
   const anMonthSel = document.getElementById("anMonth");
   const anYearSel = document.getElementById("anYear");
   if (!anMonthSel.dataset.bound) {
@@ -1359,8 +1350,6 @@ function renderAnalisis() {
     weekSelect.classList.add("hidden");
   }
 
-  /* Both Bulanan and Mingguan are scoped to the chosen month/year; Mingguan
-     additionally narrows down to one week-of-month bucket within it. */
   let dashTx = state.transactions.filter(t => {
     if (t.type !== "Pengeluaran") return false;
     const d = parseISO(t.date);
@@ -1376,10 +1365,6 @@ function renderAnalisis() {
   const konsumtifAmt = state.budget.filter(b => b.type === "Konsumtif").reduce((s, b) => s + (spentByCategory[b.code] || 0), 0);
   const nonKonsumtifAmt = state.budget.filter(b => b.type === "Non-Konsumtif").reduce((s, b) => s + (spentByCategory[b.code] || 0), 0);
 
-  /* Income for the ratio/breakdown is scoped to the selected month too, so
-     the percentage reflects the period being viewed. The DSR indicator
-     further down still uses all-time income (see renderExtraIndicators),
-     since debt capacity shouldn't reset every time you change this filter. */
   const periodIncome = state.transactions
     .filter(t => t.type === "Pemasukan")
     .filter(t => { const d = parseISO(t.date); return d.getFullYear() === anYear && d.getMonth() + 1 === anMonth; })
@@ -1505,9 +1490,6 @@ function renderExtraIndicators(totalIncome) {
   wrap.appendChild(ratioCard);
 }
 
-/* ---------------------------------------------------------------------- */
-/* Excel export                                                           */
-/* ---------------------------------------------------------------------- */
 function buildExportTables() {
   return {
     accounts: state.accounts.map(a => ({
@@ -1554,10 +1536,6 @@ function exportToExcel() {
   XLSX.writeFile(wb, `equilife-export-${todayISO()}.xlsx`);
 }
 
-/* JSON export: same tables as Excel, but a format that's trivial for a
-   Node/Python script to read and push straight into MySQL — see the
-   sync-to-mysql.py sample in the README. Excel export above is kept as-is
-   for people who just want to open/inspect the data by hand. */
 function exportToJSON() {
   const tables = buildExportTables();
   const payload = { exported_at: new Date().toISOString(), user: currentUser ? currentUser.email : null, ...tables };
@@ -1722,13 +1700,14 @@ function init() {
     chevron.textContent = willOpen ? "−" : "＋";
     if (willOpen) { ensureDraftBudget(); renderBudgetSettings(); }
   });
+  
   document.getElementById("saveBudgetBtn").addEventListener("click", () => {
     ensureDraftBudget();
-    state.budget = JSON.parse(JSON.stringify(draftBudget));
+    const key = getSelectedBudgetPeriodKey();
+    state.monthlyBudgets[key] = JSON.parse(JSON.stringify(draftBudget));
     saveState();
-    const spent = renderBudgetMonitoring();
-    renderBudgetChart(spent);
-    renderTxFormOptions();
+    const data = renderBudgetMonitoring();
+    renderBudgetChart(data);
     flash(document.getElementById("saveBudgetBtn"), tr().saved_ok);
   });
 
@@ -1857,37 +1836,26 @@ function init() {
 }
 
 /* ==========================================================================
-   AUTH — registration, login, email verification, session, per-user data
-   isolation. Everything is client-side (this is a static site with no
-   backend), so accounts live in localStorage on this browser/device only.
-   See the README for the honest security caveats and the optional EmailJS
-   setup for sending a real verification email.
+   AUTH
    ========================================================================== */
 const USERS_KEY = "equilife_users_v1";
 const SESSION_KEY = "equilife_session_v1";
-
-/* Fill these in with your own EmailJS account (emailjs.com, free tier)
-   to send a real verification email. Leave empty to fall back to an
-   on-screen "preview" of the code — the app still works fully either way. */
 const EMAILJS_CONFIG = { publicKey: "", serviceId: "", templateId: "" };
 
-let currentUser = null; /* { id, email, fullName, birthDate, birthPlace, passwordHash, verified, verifyCode, verifyCodeExpires, createdAt } */
+let currentUser = null; 
 let pendingVerifyUserId = null;
 
 function loadUsers() {
   try { return JSON.parse(localStorage.getItem(USERS_KEY)) || {}; } catch (e) { return {}; }
 }
 function saveUsers(users) {
-  try { localStorage.setItem(USERS_KEY, JSON.stringify(users)); } catch (e) { /* storage unavailable */ }
+  try { localStorage.setItem(USERS_KEY, JSON.stringify(users)); } catch (e) { }
 }
 function findUserByEmail(email) {
   const users = loadUsers();
   return Object.values(users).find(u => u.email.toLowerCase() === email.toLowerCase()) || null;
 }
 
-/* SHA-256 via Web Crypto when available (any HTTPS site, incl. GitHub
-   Pages); falls back to a simple non-cryptographic hash for local file://
-   previews where crypto.subtle may be unavailable, so the app still runs. */
 async function hashText(text) {
   if (window.crypto && window.crypto.subtle) {
     const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
@@ -1912,8 +1880,6 @@ function sendVerificationEmail(user, code) {
     });
     devBox.classList.add("hidden");
   } else {
-    /* No email service configured: static sites can't send real email on
-       their own, so show the code directly as a clearly-labelled preview. */
     devBox.classList.remove("hidden");
     devBox.textContent = dict.auth_dev_preview(code);
   }
@@ -1960,14 +1926,11 @@ function toggleDrawer() {
 
 function bootApp(user) {
   currentUser = user;
-  try { localStorage.setItem(SESSION_KEY, user.id); } catch (e) { /* ignore */ }
+  try { localStorage.setItem(SESSION_KEY, user.id); } catch (e) { }
 
   document.getElementById("authScreen").classList.add("hidden");
   document.getElementById("appRoot").classList.remove("hidden");
 
-  /* one-time convenience: if this browser has old pre-login data sitting
-     under the legacy single-user key, offer it to the very first user who
-     logs in on this device instead of silently discarding it. */
   try {
     const legacy = localStorage.getItem(STORAGE_KEY_LEGACY);
     const alreadyHasOwnData = localStorage.getItem(dataKeyForUser(user.id));
@@ -1975,7 +1938,7 @@ function bootApp(user) {
       localStorage.setItem(dataKeyForUser(user.id), legacy);
       localStorage.removeItem(STORAGE_KEY_LEGACY);
     }
-  } catch (e) { /* ignore */ }
+  } catch (e) { }
 
   state = loadState();
   uiLang = state.lang;
@@ -1989,7 +1952,7 @@ function bootApp(user) {
 }
 
 function logout() {
-  try { localStorage.removeItem(SESSION_KEY); } catch (e) { /* ignore */ }
+  try { localStorage.removeItem(SESSION_KEY); } catch (e) { }
   currentUser = null;
   state = null;
   closeDrawer();
@@ -2001,7 +1964,7 @@ function logout() {
 
 function tryResumeSession() {
   let sessionId = null;
-  try { sessionId = localStorage.getItem(SESSION_KEY); } catch (e) { /* ignore */ }
+  try { sessionId = localStorage.getItem(SESSION_KEY); } catch (e) { }
   if (!sessionId) return false;
   const users = loadUsers();
   const user = users[sessionId];
@@ -2017,7 +1980,8 @@ function initAuthUI() {
     e.preventDefault();
     clearAuthErrors();
     const dict = tr();
-    const email = document.getElementById("loginEmail").value.trim();
+    // Diperbaiki: memastikan input email dibaca konsisten walau dari HP
+    const email = document.getElementById("loginEmail").value.trim().toLowerCase();
     const password = document.getElementById("loginPassword").value;
     const user = findUserByEmail(email);
     if (!user) { showAuthError("loginError", dict.auth_err_not_found); return; }
@@ -2043,7 +2007,7 @@ function initAuthUI() {
     const fullName = document.getElementById("regFullName").value.trim();
     const birthDate = document.getElementById("regBirthDate").value;
     const birthPlace = document.getElementById("regBirthPlace").value.trim();
-    const email = document.getElementById("regEmail").value.trim();
+    const email = document.getElementById("regEmail").value.trim().toLowerCase();
     const password = document.getElementById("regPassword").value;
 
     if (findUserByEmail(email)) { showAuthError("registerError", dict.auth_err_email_taken); return; }
