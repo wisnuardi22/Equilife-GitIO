@@ -531,11 +531,16 @@ function renderOverview() {
     const card = document.createElement("div");
     card.className = "acc-card";
     card.innerHTML = `
-      <div class="acc-name"><span class="acc-avatar">${escapeHtml(a.name.charAt(0))}</span>${escapeHtml(a.name)}</div>
+      <div class="acc-name">
+        <div class="acc-avatar" style="background:none; display:flex; align-items:center; justify-content:center;">
+          ${getAccountLogoHtml(a.name)}
+        </div>
+        ${escapeHtml(a.name)}
+      </div>
       <div class="acc-balance">${state.showBalance ? fmtRp(a.balance) : "Rp ••••••"}</div>`;
     grid.appendChild(card);
   });
-
+  
   const invGroups = activeInvestmentsByKode();
   let investTotal = 0;
   invGroups.forEach(g => {
@@ -2052,6 +2057,29 @@ function initAuthUI() {
     document.getElementById("loginForm").reset();
     bootApp(user);
   });
+
+  function getAccountLogoHtml(accName) {
+  const name = (accName || "").toLowerCase();
+  let fileName = "";
+
+  if (name.includes("bri")) {
+    fileName = "bri.svg";
+  } else if (name.includes("mandiri")) {
+    fileName = "mandiri.png";
+  } else if (name.includes("jago")) {
+    fileName = "jago.svg";
+  } else if (name.includes("gopay")) {
+    fileName = "gopay.png";
+  } else if (name.includes("shopee")) {
+    fileName = "ShopeePay.png";
+  }
+
+  if (fileName) {
+    return `<img src="assets/${fileName}" alt="${escapeHtml(accName)}" style="width:20px; height:20px; object-fit:contain; border-radius:4px;" />`;
+  } else {
+    return escapeHtml(accName.charAt(0));
+  }
+}
 
   document.getElementById("registerForm").addEventListener("submit", async (e) => {
     e.preventDefault();
