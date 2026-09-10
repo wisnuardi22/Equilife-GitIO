@@ -5,9 +5,6 @@
 
 const STORAGE_KEY_LEGACY = "equilife_data_v3";
 
-/* ---------------------------------------------------------------------- */
-/* i18n                                                                   */
-/* ---------------------------------------------------------------------- */
 const T = {
   ID: {
     tagline: "Pencatatan Keuangan Pribadi",
@@ -29,8 +26,6 @@ const T = {
     expense: "Pengeluaran", income: "Pemasukan", transfer: "Transfer",
     date: "Tanggal", acc_from: "Sumber Rekening", acc_to: "Rekening Tujuan",
     from_acc: "Dari Rekening", to_acc: "Ke Rekening",
-    income_source: "Sumber Pemasukan",
-    income_src_salary: "Gaji Bulanan", income_src_side: "Side Income", income_src_other: "Penghasilan Lainnya",
     per_month: "/bln", months_unit: "bln", debt_bunga_persen_short: "bunga",
     category: "Kategori Pos Pengeluaran",
     amount: "Nominal Transaksi (Rp)", notes: "Keterangan",
@@ -39,7 +34,7 @@ const T = {
     sec_tx: "Transaksi", sec_debt: "Utang & Cicilan", sec_invest: "Investasi", sec_category: "Kelola Kategori",
     setting_title: "Target Anggaran & Perhitungan Otomatis",
     setting_desc: "Ubah nominal (Rp) atau persentase (%) — kolom satunya akan terhitung otomatis.",
-    budget_period_title: "PERIODE ANGGARAN BULANAN", /* NEW */
+    budget_period_title: "PERIODE ANGGARAN BULANAN",
     code: "Kode", target_rp: "Target (Rp)", target_pct: "Target (%)",
     total_all: "TOTAL KESELURUHAN", save_setting: "Simpan Perubahan Target",
     budget_vs_act: "Monitoring Anggaran", budget_vs_act_desc: "Budget vs Realisasi bulan terpilih",
@@ -57,8 +52,8 @@ const T = {
     no_data_chart: "Belum ada data untuk ditampilkan.",
     income_info: (v) => `Total pemasukan tercatat pada periode ini: <strong>${v}</strong>`,
     no_income_warn: "Belum ada pemasukan tercatat. Tambahkan transaksi pemasukan agar target dapat dihitung otomatis.",
-    salary_info: (v, m) => `Anggaran ini dihitung dari <strong>Gaji Bulanan${m ? " " + m : ""}: ${v}</strong> — Side Income dan Penghasilan Lainnya tidak dihitung sebagai dasar target anggaran.`,
-    no_salary_warn: "Belum ada transaksi Pemasukan dengan sumber \"Gaji Bulanan\" pada bulan ini. Tambahkan dulu agar target dapat dihitung otomatis.",
+    salary_info: (v, m) => `Anggaran ini dihitung dari total pemasukan bulan ${m}: <strong>${v}</strong>`,
+    no_salary_warn: "Belum ada transaksi Pemasukan pada bulan ini.",
     total_ok: "Total alokasi persentase sudah 100% — sempurna.",
     total_warn: (p) => `Total alokasi persentase saat ini ${p}% — idealnya mencapai 100%.`,
     reset_data: "Reset data contoh",
@@ -100,16 +95,16 @@ const T = {
     jenis_harta: "Harta", jenis_utang: "Utang", jenis_modal: "Modal", jenis_pendapatan: "Pendapatan", jenis_beban: "Beban",
     edit: "Edit", delete: "Hapus",
     cat_name_required: "Nama kategori tidak boleh kosong.",
-    cat_code_exists: "Kode ini sudah dipakai kategori lain, silakan ubah kodenya.",
+    cat_code_exists: "Kode ini sudah dipakai.",
     extra_indicators_title: "Indikator Kesehatan Keuangan",
-    extra_indicators_desc: "Kemampuan bayar utang dan alokasi investasi (acuan umum, bukan saran keuangan personal)",
+    extra_indicators_desc: "Kemampuan bayar utang dan alokasi investasi.",
     dsr_title: "Rasio Cicilan terhadap Pemasukan (DSR)",
-    dsr_note: "Total tagihan bulanan utang aktif dibagi rata-rata pemasukan bulanan. Acuan umum: <30% sehat, 30–50% waspada, >50% berisiko.",
+    dsr_note: "Total tagihan bulanan utang aktif dibagi rata-rata pemasukan bulanan.",
     dsr_sehat: "Sehat", dsr_waspada: "Waspada", dsr_berisiko: "Berisiko",
     invest_realized_title: "Laba/Rugi Investasi Terealisasi",
     invest_realized_note: "Total selisih nominal diterima dan modal dari seluruh posisi yang sudah dijual.",
     invest_ratio_title: "Porsi Investasi dari Total Aset",
-    invest_ratio_note: "Total modal investasi aktif dibanding total aset. Acuan umum, bukan target baku.",
+    invest_ratio_note: "Total modal investasi aktif dibanding total aset.",
     invest_low: "Rendah", invest_moderate: "Moderat", invest_aggressive: "Agresif",
     nav_section_menu: "MENU", logout: "Keluar", export_excel: "⬇ Export Excel", export_json: "⬇ Export JSON",
     auth_login_tab: "Masuk", auth_register_tab: "Daftar",
@@ -117,16 +112,16 @@ const T = {
     auth_fullname: "Nama Lengkap", auth_birthdate: "Tanggal Lahir", auth_birthplace: "Kota Kelahiran",
     auth_password_hint: "Minimal 6 karakter", auth_register_btn: "Daftar",
     auth_verify_code: "Kode Verifikasi (6 digit)", auth_verify_btn: "Verifikasi & Masuk", auth_resend: "Kirim ulang kode",
-    auth_disclaimer: "Situs ini statis (GitHub Pages) — akun dan data disimpan di browser ini.",
-    auth_verify_desc: (email) => `Kami mengirim kode ke <strong>${email}</strong>.`,
-    auth_dev_preview: (code) => `Mode pratinjau: kode verifikasi kamu adalah ${code}`,
-    auth_email_failed: (code) => `Pengiriman email gagal. Kode verifikasi: ${code}`,
-    auth_err_not_found: "Email belum terdaftar. Silakan daftar dulu.",
+    auth_disclaimer: "Data disimpan aman di local storage.",
+    auth_verify_desc: (email) => `Kode dikirim ke <strong>${email}</strong>.`,
+    auth_dev_preview: (code) => `Mode pratinjau kode: ${code}`,
+    auth_email_failed: (code) => `Pengiriman email gagal. Kode: ${code}`,
+    auth_err_not_found: "Email belum terdaftar.",
     auth_err_wrong_password: "Kata sandi salah.",
-    auth_err_email_taken: "Email ini sudah terdaftar. Silakan masuk.",
+    auth_err_email_taken: "Email sudah terdaftar.",
     auth_err_password_short: "Kata sandi minimal 6 karakter.",
-    auth_err_code_expired: "Kode kedaluwarsa. Klik Kirim ulang.",
-    auth_err_code_wrong: "Kode verifikasi salah.",
+    auth_err_code_expired: "Kode kedaluwarsa.",
+    auth_err_code_wrong: "Kode salah.",
     auth_err_generic: "Terjadi kesalahan.",
   },
   EN: {
@@ -149,8 +144,6 @@ const T = {
     expense: "Expense", income: "Income", transfer: "Transfer",
     date: "Date", acc_from: "Source Account", acc_to: "Destination Account",
     from_acc: "From Account", to_acc: "To Account",
-    income_source: "Income Source",
-    income_src_salary: "Monthly Salary", income_src_side: "Side Income", income_src_other: "Other Income",
     per_month: "/mo", months_unit: "mo", debt_bunga_persen_short: "interest",
     category: "Expense Category",
     amount: "Transaction Amount (Rp)", notes: "Notes",
@@ -177,8 +170,8 @@ const T = {
     no_data_chart: "Nothing to display yet.",
     income_info: (v) => `Total recorded income this period: <strong>${v}</strong>`,
     no_income_warn: "No income recorded yet.",
-    salary_info: (v, m) => `This budget is calculated from <strong>Monthly Salary${m ? " " + m : ""}: ${v}</strong>.`,
-    no_salary_warn: "No income transaction with source \"Monthly Salary\" yet this month.",
+    salary_info: (v, m) => `This budget is calculated from total income in ${m}: <strong>${v}</strong>`,
+    no_salary_warn: "No income recorded for this month.",
     total_ok: "Total allocation is 100% — perfect.",
     total_warn: (p) => `Current allocation total is ${p}% — ideally it should reach 100%.`,
     reset_data: "Reset sample data",
@@ -320,7 +313,7 @@ function migrateState(s) {
   if (!s.debts) s.debts = [];
   if (!s.investments) s.investments = [];
   if (!s.chartOfAccounts) s.chartOfAccounts = [];
-  if (!s.monthlyBudgets) s.monthlyBudgets = {}; /* NEW: Format { "YYYY-MM": [budget arrays] } */
+  if (!s.monthlyBudgets) s.monthlyBudgets = {};
   if (s.debtCounter === undefined) s.debtCounter = s.debts.length;
   if (s.investCounter === undefined) s.investCounter = s.investments.length;
   return s;
@@ -703,7 +696,7 @@ function renderTxRow(tx, withActions) {
   const typeLabel = tx.type === "Pemasukan" ? dict.income : tx.type === "Pengeluaran" ? dict.expense : dict.transfer;
   let acc;
   if (tx.type === "Pengeluaran") acc = tx.accountFrom;
-  else if (tx.type === "Pemasukan") acc = `${incomeSourceLabel(tx.incomeSource)} → ${tx.accountTo}`;
+  else if (tx.type === "Pemasukan") acc = `${tx.accountTo}`;
   else acc = `${tx.accountFrom} → ${tx.accountTo}`;
 
   row.innerHTML = `
@@ -725,14 +718,6 @@ function renderTxRow(tx, withActions) {
   return row;
 }
 
-function incomeSourceLabel(src) {
-  const dict = tr();
-  if (src === "Gaji Bulanan") return dict.income_src_salary;
-  if (src === "Side Income") return dict.income_src_side;
-  if (src === "Penghasilan Lainnya") return dict.income_src_other;
-  return src || dict.income_src_other;
-}
-
 let txType = "Pengeluaran";
 
 function renderTxFormOptions() {
@@ -740,6 +725,7 @@ function renderTxFormOptions() {
   const accFrom = document.getElementById("txAccFrom");
   const accTo = document.getElementById("txAccTo");
   const cat = document.getElementById("txCategory");
+  
   [accFrom, accTo].forEach(sel => {
     const prev = sel.value;
     sel.innerHTML = state.accounts.map(a => `<option value="${escapeHtml(a.name)}">${escapeHtml(a.name)}</option>`).join("");
@@ -771,19 +757,22 @@ function applyTxTypeUI() {
   const dict = tr();
   document.querySelectorAll("#txTypeGroup .pill").forEach(p => p.classList.toggle("active", p.dataset.type === txType));
   
-  const fieldAccTo = document.getElementById("fieldAccTo");     // Rekening Tujuan
+  const fieldAccFrom = document.getElementById("fieldAccFrom");
+  const fieldAccTo = document.getElementById("fieldAccTo");
   const fieldCategory = document.getElementById("fieldCategory");
   const labelAccTo = document.getElementById("labelAccTo");
 
   if (txType === "Pengeluaran") {
+    fieldAccFrom.classList.remove("hidden");
     fieldAccTo.classList.add("hidden");
     fieldCategory.classList.remove("hidden");
   } else if (txType === "Pemasukan") {
-    // Pemasukan: Sumber rekening sudah dihapus total, hanya tampil rekening tujuan
+    fieldAccFrom.classList.add("hidden");    // Hapus total visual Source Account saat Income
     fieldAccTo.classList.remove("hidden");
     fieldCategory.classList.add("hidden");
     labelAccTo.textContent = dict.acc_to;
   } else {
+    fieldAccFrom.classList.remove("hidden");
     fieldAccTo.classList.remove("hidden");
     fieldCategory.classList.add("hidden");
   }
@@ -1076,7 +1065,7 @@ function deleteCategory(code, source) {
 }
 
 /* ---------------------------------------------------------------------- */
-/* ANGGARAN (NEW: Filter Bulan Terintegrasi)                              */
+/* ANGGARAN                                                               */
 /* ---------------------------------------------------------------------- */
 function populateBudgetMonthYear() {
   const mSel = document.getElementById("bgMonth");
@@ -1118,19 +1107,15 @@ function ensureDraftBudget() {
   draftBudget = JSON.parse(JSON.stringify(activeList));
 }
 
-function totalIncomeAllTime() {
-  return state.transactions.filter(t => t.type === "Pemasukan").reduce((s, t) => s + t.amount, 0);
-}
-
 function monthlySalaryBasis(year, month) {
-  const gajiTx = state.transactions.filter(t => t.type === "Pemasukan" && t.incomeSource === "Gaji Bulanan");
-  if (gajiTx.length === 0) return { amount: 0, monthKey: null };
-  const byMonth = {};
-  gajiTx.forEach(t => { const k = t.date.slice(0, 7); byMonth[k] = (byMonth[k] || 0) + t.amount; });
-  const targetKey = `${year}-${String(month).padStart(2, "0")}`;
-  if (byMonth[targetKey] !== undefined) return { amount: byMonth[targetKey], monthKey: targetKey };
-  const latestKey = Object.keys(byMonth).sort().pop();
-  return { amount: byMonth[latestKey], monthKey: latestKey };
+  const incomeTx = state.transactions.filter(t => {
+    if (t.type !== "Pemasukan") return false;
+    const d = parseISO(t.date);
+    return d.getFullYear() === year && d.getMonth() + 1 === month;
+  });
+  if (incomeTx.length === 0) return { amount: 0, monthKey: `${year}-${String(month).padStart(2, "0")}` };
+  const totalIncome = incomeTx.reduce((s, t) => s + t.amount, 0);
+  return { amount: totalIncome, monthKey: `${year}-${String(month).padStart(2, "0")}` };
 }
 
 function renderBudgetSettings() {
@@ -1145,7 +1130,7 @@ function renderBudgetSettings() {
   const infoBox = document.getElementById("incomeInfo");
   if (income > 0) {
     infoBox.className = "callout ok";
-    infoBox.innerHTML = dict.salary_info(fmtRp(income), salary.monthKey ? monthLabelFromKey(salary.monthKey) : "");
+    infoBox.innerHTML = dict.salary_info(fmtRp(income), monthLabelFromKey(salary.monthKey));
   } else {
     infoBox.className = "callout warn";
     infoBox.textContent = dict.no_income_warn;
@@ -1429,7 +1414,7 @@ function renderAnalisis() {
     });
   }
 
-  renderExtraIndicators(totalIncomeAllTime());
+  renderExtraIndicators(state.transactions.filter(t => t.type === "Pemasukan").reduce((s, t) => s + t.amount, 0));
 }
 
 function renderExtraIndicators(totalIncome) {
@@ -1645,29 +1630,43 @@ function init() {
 
   document.getElementById("txCategory").addEventListener("change", updateDebtLinkVisibility);
 
- document.getElementById("txForm").addEventListener("submit", (e) => {
+  document.getElementById("txForm").addEventListener("submit", (e) => {
     e.preventDefault();
     const date = document.getElementById("txDate").value || todayISO();
     const amount = rawNumber(txAmount);
     const notes = document.getElementById("txNotes").value.trim();
-    
-    // Cek keberadaan elemen accFrom (karena sudah dihapus saat income)
-    const accFromEl = document.getElementById("txAccFrom");
-    const accFrom = accFromEl ? accFromEl.value : "-";
+    const accFrom = (txType !== "Pemasukan") ? document.getElementById("txAccFrom").value : "-";
     const accTo = document.getElementById("txAccTo").value;
     const category = document.getElementById("txCategory").value;
     const debtLinkId = document.getElementById("txDebtLink").value;
+
+    if (txType === "Pengeluaran" && (accFrom.toLowerCase().includes("paylater") || notes.toLowerCase().includes("paylater"))) {
+      state.debtCounter += 1;
+      state.debts.push({
+        id: `DEBT-${String(state.debtCounter).padStart(3, "0")}`,
+        source: accFrom,
+        startDate: date,
+        kewajiban: amount,
+        admin: 0,
+        diterima: amount,
+        jangkaWaktu: 1,
+        tagihanPerBulan: amount,
+        totalBunga: 0,
+        persenBunga: 0,
+        manualStatus: "Aktif",
+        notes: notes ? `Otomatis dari Pengeluaran: ${notes}` : "Pengeluaran Paylater"
+      });
+    }
 
     const tx = {
       date, type: txType,
       accountFrom: txType === "Pemasukan" ? "-" : accFrom,
       accountTo: txType === "Pengeluaran" ? "-" : accTo,
       categoryCode: txType === "Pengeluaran" ? category : "-",
-      incomeSource: "-", 
+      incomeSource: "-",
       debtId: (txType === "Pengeluaran" && category === DEBT_CATEGORY_CODE && debtLinkId) ? debtLinkId : null,
       amount, notes,
     };
-    
     addTransaction(tx);
     document.getElementById("txNotes").value = "";
     renderEverything();
@@ -1698,38 +1697,8 @@ function init() {
   });
   
   document.getElementById("saveBudgetBtn").addEventListener("click", () => {
-    document.getElementById("saveBudgetBtn").addEventListener("click", () => {
-  const key = getSelectedBudgetPeriodKey();
-  
-  // 1. Simpan konfigurasi target khusus untuk bulan yang sedang dipilih
-  state.monthlyBudgets[key] = JSON.parse(JSON.stringify(draftBudget));
-  
-  // 2. Jadikan target bulan ini sebagai template utama (master)
-  // agar saat Anda mengecek bulan depan, targetnya otomatis mengikuti 
-  // nominal terakhir ini dan tidak kembali menjadi 0.
-  state.budget.forEach(masterRow => {
-    const draftRow = draftBudget.find(d => d.code === masterRow.code);
-    if (draftRow) {
-      masterRow.targetPercent = draftRow.targetPercent;
-      masterRow.targetBudget = draftRow.targetBudget;
-    }
-  });
-  
-  saveState();
-  
-  // 3. Perbarui langsung tampilan tabel dan grafik Monitoring
-  const data = renderBudgetMonitoring();
-  renderBudgetChart(data);
-  flash(document.getElementById("saveBudgetBtn"), tr().saved_ok);
-});
     const key = getSelectedBudgetPeriodKey();
-    
-    // 1. Simpan konfigurasi target khusus untuk bulan yang sedang dipilih
     state.monthlyBudgets[key] = JSON.parse(JSON.stringify(draftBudget));
-    
-    // 2. Jadikan target bulan ini sebagai template utama (master)
-    // agar saat Anda mengecek bulan depan, targetnya otomatis mengikuti 
-    // nominal terakhir ini dan tidak kembali menjadi 0.
     state.budget.forEach(masterRow => {
       const draftRow = draftBudget.find(d => d.code === masterRow.code);
       if (draftRow) {
@@ -1737,10 +1706,7 @@ function init() {
         masterRow.targetBudget = draftRow.targetBudget;
       }
     });
-    
     saveState();
-    
-    // 3. Perbarui langsung tampilan tabel dan grafik Monitoring
     const data = renderBudgetMonitoring();
     renderBudgetChart(data);
     flash(document.getElementById("saveBudgetBtn"), tr().saved_ok);
@@ -2015,7 +1981,6 @@ function initAuthUI() {
     e.preventDefault();
     clearAuthErrors();
     const dict = tr();
-    // Diperbaiki: memastikan input email dibaca konsisten walau dari HP
     const email = document.getElementById("loginEmail").value.trim().toLowerCase();
     const password = document.getElementById("loginPassword").value;
     const user = findUserByEmail(email);

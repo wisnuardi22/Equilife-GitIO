@@ -260,17 +260,13 @@
               <label data-i18n="date">Tanggal</label>
               <input type="date" id="txDate" required>
             </div>
+            <div class="field" id="fieldAccFrom">
+              <label id="labelAccFrom" data-i18n="acc_from">Sumber Rekening</label>
+              <select id="txAccFrom"></select>
+            </div>
             <div class="field hidden" id="fieldAccTo">
               <label id="labelAccTo" data-i18n="acc_to">Rekening Tujuan</label>
               <select id="txAccTo"></select>
-            </div>
-            <div class="field hidden" id="fieldIncomeSource">
-              <label data-i18n="income_source">Sumber Pemasukan</label>
-              <select id="txIncomeSource">
-                <option value="Gaji Bulanan" data-i18n="income_src_salary">Gaji Bulanan</option>
-                <option value="Side Income" data-i18n="income_src_side">Side Income</option>
-                <option value="Penghasilan Lainnya" data-i18n="income_src_other">Penghasilan Lainnya</option>
-              </select>
             </div>
             <div class="field" id="fieldCategory">
               <label data-i18n="category">Kategori Pos Pengeluaran</label>
@@ -499,7 +495,6 @@
 
     <!-- ===================== ANGGARAN ===================== -->
     <section id="view-anggaran" class="view">
-      <!-- FITUR BARU: Filter Bulan -->
       <div class="section-row" style="margin-bottom: 16px;">
         <div class="eyebrow" data-i18n="budget_period_title">PERIODE ANGGARAN BULANAN</div>
         <div class="filter-inline">
