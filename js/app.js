@@ -1129,8 +1129,16 @@ function monthlySalaryBasis(year, month) {
   const incomeTx = state.transactions.filter(t => {
     if (t.type !== "Pemasukan") return false;
     const d = parseISO(t.date);
-    return d.getFullYear() === year && d.getMonth() + 1 === month;
+    const matchDate = d.getFullYear() === year && d.getMonth() + 1 === month;
+    
+    // HANYA AMBIL PEMASUKAN YANG BERASAL DARI GAJI (Cek dari catatan/notes atau sumber)
+    const noteLower = (t.notes || "").toLowerCase();
+    const sourceLower = (t.incomeSource || "").toLowerCase();
+    const isSalary = noteLower.includes("gaji") || sourceLower.includes("gaji") || noteLower.includes("salary") || sourceLower.includes("salary");
+    
+    return matchDate && isSalary;
   });
+
   if (incomeTx.length === 0) return { amount: 0, monthKey: `${year}-${String(month).padStart(2, "0")}` };
   const totalIncome = incomeTx.reduce((s, t) => s + t.amount, 0);
   return { amount: totalIncome, monthKey: `${year}-${String(month).padStart(2, "0")}` };
