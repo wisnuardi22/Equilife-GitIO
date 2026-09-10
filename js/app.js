@@ -770,29 +770,22 @@ function updateDebtLinkVisibility() {
 function applyTxTypeUI() {
   const dict = tr();
   document.querySelectorAll("#txTypeGroup .pill").forEach(p => p.classList.toggle("active", p.dataset.type === txType));
-  const fieldAccTo = document.getElementById("fieldAccTo");
+  
+  const fieldAccTo = document.getElementById("fieldAccTo");     // Rekening Tujuan
   const fieldCategory = document.getElementById("fieldCategory");
-  const fieldIncomeSource = document.getElementById("fieldIncomeSource");
-  const labelAccFrom = document.getElementById("labelAccFrom");
   const labelAccTo = document.getElementById("labelAccTo");
 
   if (txType === "Pengeluaran") {
     fieldAccTo.classList.add("hidden");
-    fieldIncomeSource.classList.add("hidden");
     fieldCategory.classList.remove("hidden");
-    labelAccFrom.textContent = dict.acc_from;
   } else if (txType === "Pemasukan") {
+    // Pemasukan: Sumber rekening sudah dihapus total, hanya tampil rekening tujuan
     fieldAccTo.classList.remove("hidden");
-    fieldIncomeSource.classList.remove("hidden");
     fieldCategory.classList.add("hidden");
-    labelAccFrom.textContent = dict.acc_from;
     labelAccTo.textContent = dict.acc_to;
   } else {
     fieldAccTo.classList.remove("hidden");
-    fieldIncomeSource.classList.add("hidden");
     fieldCategory.classList.add("hidden");
-    labelAccFrom.textContent = dict.from_acc;
-    labelAccTo.textContent = dict.to_acc;
   }
   updateDebtLinkVisibility();
 }
@@ -1652,15 +1645,17 @@ function init() {
 
   document.getElementById("txCategory").addEventListener("change", updateDebtLinkVisibility);
 
-  document.getElementById("txForm").addEventListener("submit", (e) => {
+ document.getElementById("txForm").addEventListener("submit", (e) => {
     e.preventDefault();
     const date = document.getElementById("txDate").value || todayISO();
     const amount = rawNumber(txAmount);
     const notes = document.getElementById("txNotes").value.trim();
-    const accFrom = document.getElementById("txAccFrom").value;
+    
+    // Cek keberadaan elemen accFrom (karena sudah dihapus saat income)
+    const accFromEl = document.getElementById("txAccFrom");
+    const accFrom = accFromEl ? accFromEl.value : "-";
     const accTo = document.getElementById("txAccTo").value;
     const category = document.getElementById("txCategory").value;
-    const incomeSource = document.getElementById("txIncomeSource").value;
     const debtLinkId = document.getElementById("txDebtLink").value;
 
     const tx = {
@@ -1668,10 +1663,11 @@ function init() {
       accountFrom: txType === "Pemasukan" ? "-" : accFrom,
       accountTo: txType === "Pengeluaran" ? "-" : accTo,
       categoryCode: txType === "Pengeluaran" ? category : "-",
-      incomeSource: txType === "Pemasukan" ? incomeSource : "-",
+      incomeSource: "-", 
       debtId: (txType === "Pengeluaran" && category === DEBT_CATEGORY_CODE && debtLinkId) ? debtLinkId : null,
       amount, notes,
     };
+    
     addTransaction(tx);
     document.getElementById("txNotes").value = "";
     renderEverything();
