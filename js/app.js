@@ -592,7 +592,10 @@ function debtStatus(debt) {
 }
 
 const DEBT_CATEGORY_CODE = "5104";
-function totalToRepayForDebt(debt) { return debt.tagihanPerBulan * debt.jangkaWaktu; }
+function totalToRepayForDebt(debt) {
+  const calculated = (debt.tagihanPerBulan || 0) * (debt.jangkaWaktu || 1);
+  return calculated > 0 ? calculated : (debt.kewajiban || 0);
+}
 function totalPaidForDebt(debtId) {
   return state.transactions
     .filter(t => t.type === "Pengeluaran" && t.debtId === debtId)
